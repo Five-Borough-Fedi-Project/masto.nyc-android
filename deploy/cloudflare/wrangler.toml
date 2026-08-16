@@ -1,0 +1,13 @@
+name = "masto-nyc-assetlinks"
+main = "src/worker.js"
+compatibility_date = "2026-08-16"
+
+# Exactly one path. Mastodon's other /.well-known/ endpoints (webfinger, nodeinfo, host-meta)
+# must continue to reach the origin, so this must never become /.well-known/*.
+[[routes]]
+pattern = "masto.nyc/.well-known/assetlinks.json"
+zone_name = "masto.nyc"
+
+# src/assetlinks.json is generated at deploy time from the release keystore - see
+# .github/workflows/deploy-assetlinks.yml. It is gitignored so a stale fingerprint can never be
+# committed and silently shipped.

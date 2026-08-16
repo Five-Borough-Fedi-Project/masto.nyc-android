@@ -1,0 +1,5 @@
+# Generated at deploy time from the release keystore. Never commit it: a stale fingerprint here
+# would silently break App Links verification for every user on the next deploy.
+src/assetlinks.json
+node_modules/
+.wrangler/

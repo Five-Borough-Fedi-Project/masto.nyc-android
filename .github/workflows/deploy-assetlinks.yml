@@ -1,0 +1,143 @@
+name: Deploy assetlinks.json
+
+# Publishes https://masto.nyc/.well-known/assetlinks.json via a Cloudflare Worker.
+#
+# The fingerprints are derived from the release keystore at deploy time rather than committed,
+# because a stale fingerprint here breaks Android App Links for every user, silently - links just
+# quietly start opening in the browser again with no error anywhere.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and print assetlinks.json without deploying"
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Decode keystore
+        uses: timheuer/base64-to-file@v1
+        id: android_keystore
+        with:
+          fileName: "release.jks"
+          encodedString: ${{ secrets.KEYSTORE_FILE }}
+
+      - name: Read applicationId from build.gradle
+        id: appid
+        run: |
+          set -euo pipefail
+          APP_ID=$(grep -oP 'applicationId\s+"\K[^"]+' mastodon/build.gradle)
+          if [ -z "$APP_ID" ]; then
+            echo "::error::Could not read applicationId from mastodon/build.gradle"
+            exit 1
+          fi
+          echo "Derived applicationId: $APP_ID"
+          echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Extract signing fingerprints
+        id: fingerprints
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          PLAY_APP_SIGNING_SHA256: ${{ secrets.PLAY_APP_SIGNING_SHA256 }}
+        run: |
+          set -euo pipefail
+          # keyAlias must match mastodon/ci_signing.gradle
+          RELEASE_SHA=$(keytool -list -v \
+            -keystore "$KEYSTORE_FILE" \
+            -alias key0 \
+            -storepass "$KEYSTORE_PASSWORD" \
+            | grep -m1 'SHA256:' | awk '{print $2}')
+
+          if ! [[ "$RELEASE_SHA" =~ ^([0-9A-F]{2}:){31}[0-9A-F]{2}$ ]]; then
+            echo "::error::Extracted fingerprint is not a valid SHA-256: '$RELEASE_SHA'"
+            exit 1
+          fi
+          echo "Release/upload key fingerprint: $RELEASE_SHA"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+
+          # If the app ships through Play with App Signing, the APK users install is signed by
+          # Google's key, not this one - and Google's is the fingerprint Android verifies against.
+          # Without it, verification fails for every Play install while working fine from CI APKs.
+          if [ -n "${PLAY_APP_SIGNING_SHA256:-}" ]; then
+            echo "Play App Signing fingerprint supplied; including it."
+            echo "play_sha=$PLAY_APP_SIGNING_SHA256" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::PLAY_APP_SIGNING_SHA256 is not set. If this app is distributed via \
+            Google Play with App Signing enabled, App Links will NOT verify for Play installs. \
+            Copy the SHA-256 from Play Console > Release > Setup > App signing into that secret."
+          fi
+
+      - name: Generate assetlinks.json
+        env:
+          APP_ID: ${{ steps.appid.outputs.app_id }}
+          RELEASE_SHA: ${{ steps.fingerprints.outputs.release_sha }}
+          PLAY_SHA: ${{ steps.fingerprints.outputs.play_sha }}
+        run: |
+          set -euo pipefail
+          FINGERPRINTS=$(jq -nc --arg a "$RELEASE_SHA" --arg b "${PLAY_SHA:-}" \
+            '[$a, $b] | map(select(. != "")) | unique')
+
+          jq -n --arg pkg "$APP_ID" --argjson fps "$FINGERPRINTS" '
+            [{
+              relation: ["delegate_permission/common.handle_all_urls"],
+              target: {
+                namespace: "android_app",
+                package_name: $pkg,
+                sha256_cert_fingerprints: $fps
+              }
+            }]
+          ' > deploy/cloudflare/src/assetlinks.json
+
+          echo "--- generated assetlinks.json ---"
+          cat deploy/cloudflare/src/assetlinks.json
+          jq -e 'length == 1 and .[0].target.package_name != "" and (.[0].target.sha256_cert_fingerprints | length) > 0' \
+            deploy/cloudflare/src/assetlinks.json > /dev/null
+
+      - name: Deploy Cloudflare Worker
+        if: ${{ github.event_name == 'release' || !inputs.dry_run }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: deploy/cloudflare
+
+      - name: Verify what Android will actually see
+        if: ${{ github.event_name == 'release' || !inputs.dry_run }}
+        env:
+          APP_ID: ${{ steps.appid.outputs.app_id }}
+          RELEASE_SHA: ${{ steps.fingerprints.outputs.release_sha }}
+        run: |
+          set -euo pipefail
+          URL="https://masto.nyc/.well-known/assetlinks.json"
+          # Cloudflare needs a moment to propagate a new route
+          sleep 15
+
+          # Deliberately no -L: Android does not follow redirects for this file, so a 301 here is
+          # a failure even though curl would happily follow it.
+          CODE=$(curl -s -o /tmp/live.json -w '%{http_code}' "$URL")
+          TYPE=$(curl -s -o /dev/null -w '%{content_type}' "$URL")
+          echo "HTTP $CODE, content-type: $TYPE"
+
+          [ "$CODE" = "200" ] || { echo "::error::Expected 200, got $CODE (a redirect fails verification)"; exit 1; }
+          case "$TYPE" in application/json*) ;; *) echo "::error::Expected application/json, got '$TYPE'"; exit 1;; esac
+
+          jq -e --arg pkg "$APP_ID" --arg sha "$RELEASE_SHA" \
+            'any(.[]; .target.package_name == $pkg and (.target.sha256_cert_fingerprints | index($sha)))' \
+            /tmp/live.json > /dev/null \
+            || { echo "::error::Live file does not contain $APP_ID with the release fingerprint"; cat /tmp/live.json; exit 1; }
+
+          echo "Verified: $URL serves $APP_ID with the current release fingerprint."
