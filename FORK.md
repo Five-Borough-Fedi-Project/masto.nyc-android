@@ -212,10 +212,24 @@ Not branded, no action needed: `ic_shortcut_compose` / `ic_shortcut_explore` (ge
 
 ## Server-side pieces
 
-`deploy/` holds files that belong on the masto.nyc server rather than in the app.
-`assetlinks.json` is the one that matters: without it Android cannot verify this app's claim on
-`https://masto.nyc/...`, so the `autoVerify="true"` profile-link filter in the manifest silently
-does nothing. See `deploy/README.md`.
+`deploy/` holds what belongs on the masto.nyc side rather than in the app. `assetlinks.json` is the
+one that matters: without it Android cannot verify this app's claim on `https://masto.nyc/...`, so
+the `autoVerify="true"` profile-link filter in the manifest silently does nothing.
+
+`deploy/cloudflare/` is a Worker that serves it, deployed by
+`.github/workflows/deploy-assetlinks.yml` on every published release. Two things there are load-
+bearing:
+
+- The Worker route is scoped to the exact path `masto.nyc/.well-known/assetlinks.json`. Widening it
+  to `/.well-known/*` would intercept Mastodon's webfinger, nodeinfo and host-meta endpoints and
+  break federation.
+- Fingerprints are derived from the release keystore at deploy time, never committed. A stale
+  fingerprint fails silently — links simply start opening in the browser again with no error
+  anywhere — so `deploy/cloudflare/src/assetlinks.json` is gitignored.
+
+See `deploy/README.md`, including the Play App Signing trap: with App Signing enabled the installed
+APK carries *Google's* signature, not the upload key's, so `PLAY_APP_SIGNING_SHA256` must be set or
+verification fails for Play installs while passing for CI-built APKs.
 
 ## Deliberately not changed: "Open email app"
 
