@@ -2,25 +2,40 @@
 
 ## `assetlinks.json` — Android App Links
 
-Android will only let this app claim `https://masto.nyc/...` links if masto.nyc vouches for it.
-Until this file is live, `https://masto.nyc/.well-known/assetlinks.json` returns **404**, domain
-verification fails, and the `autoVerify="true"` profile-link filter in `AndroidManifest.xml` does
-nothing — tapping a `masto.nyc/@user` link stays in the browser.
+**This file must end up at exactly one URL:**
+
+    https://masto.nyc/.well-known/assetlinks.json
+
+That path is hardcoded in Android. It cannot be configured, moved, or redirected. The `deploy/`
+directory in this repo is only where the file is kept under version control — it has no meaning to
+Android, and serving it from `masto.nyc/deploy/` does nothing.
+
+Android will only let this app claim `https://masto.nyc/...` links if masto.nyc vouches for it this
+way. Until the file is live, domain verification fails and the `autoVerify="true"` profile-link
+filter in `AndroidManifest.xml` does nothing — tapping a `masto.nyc/@user` link stays in the browser.
 
 ### Deploying
 
-Drop it into the Mastodon install's `public/` directory, which is served as-is:
+A standard Mastodon nginx config sets `root .../public` with `try_files $uri @proxy`, so anything
+under `public/` is served directly. Put the file at:
 
-    public/.well-known/assetlinks.json
+    /home/mastodon/live/public/.well-known/assetlinks.json
 
-Then check it from outside:
+On Docker the path inside the container is the same, but `public/` usually isn't writable at
+runtime — you'll need a volume mount or to bake it into the image.
+
+Then check it from outside the server:
 
     curl -i https://masto.nyc/.well-known/assetlinks.json
 
-It must return **200**, `Content-Type: application/json`, and **no redirect**. Android follows
-neither redirects nor HTTP here. If nginx has a `location /.well-known/` block for ACME/certbot
-that shortcuts everything under that path, it will shadow this file — check there first if the
-curl comes back 404 after deploying.
+All three must hold, and Android is unforgiving about each:
+
+- **200** — not 301 or 302. Android does not follow redirects for this file.
+- **`Content-Type: application/json`** — nginx infers this from the `.json` extension.
+- **HTTPS**, with a valid certificate.
+
+Most likely snag: if nginx has a `location /.well-known/` block for ACME/certbot, it can shadow
+this path and return 404 even though the file is on disk. Check there first.
 
 ### Re-verifying on a device
 
