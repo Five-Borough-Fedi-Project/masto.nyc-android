@@ -228,7 +228,7 @@
 	<string name="trending_posts_info_banner">These are the posts gaining traction across Mastodon.</string>
 	<string name="trending_links_info_banner">These are the news stories getting talked about on Mastodon.</string>
 	<!-- %s is the server domain -->
-	<string name="local_timeline_info_banner">These are all the posts from all users in your server (%s).</string>
+	<string name="local_timeline_info_banner">These are the recent posts from your local %s neighbors!</string>
 	<string name="recommended_accounts_info_banner">You might like these accounts based on others you follow.</string>
 	<string name="see_new_posts">New posts</string>
 	<string name="follow_back">Follow back</string>
