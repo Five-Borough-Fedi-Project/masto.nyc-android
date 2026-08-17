@@ -129,7 +129,16 @@ jobs:
           set -euo pipefail
           git checkout -B "$BRANCH" origin/main
           if git merge --no-edit "$TAG"; then
-            echo "conflicted=false" >> "$GITHUB_OUTPUT"
+            # A forced sync of an already-merged tag is a no-op merge. Without this the job would
+            # build, push an identical branch, and then fail at `gh pr create` with "no commits
+            # between", which looks like a broken pipeline rather than nothing to do.
+            if git diff --quiet origin/main HEAD; then
+              echo "Merge produced no changes against main. Nothing to sync."
+              echo "conflicted=false" >> "$GITHUB_OUTPUT"
+              echo "empty=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "conflicted=false" >> "$GITHUB_OUTPUT"
+            fi
           elif [ -z "$(git diff --name-only --diff-filter=U)" ]; then
             git commit --no-edit
             echo "resolved entirely from recorded resolutions"
@@ -141,7 +150,7 @@ jobs:
 
       - name: Build
         id: build
-        if: steps.pick.outputs.skip == 'false' && steps.merge.outputs.conflicted == 'false'
+        if: steps.pick.outputs.skip == 'false' && steps.merge.outputs.conflicted == 'false' && steps.merge.outputs.empty != 'true'
         continue-on-error: true
         run: ./gradlew assembleDebug --console=plain 2>&1 | tee /tmp/build.log
 
@@ -246,7 +255,7 @@ jobs:
 
       - name: Push and open a PR
         id: pr
-        if: steps.pick.outputs.skip == 'false' && (steps.build.outcome == 'success' || steps.agent.outcome == 'success')
+        if: steps.pick.outputs.skip == 'false' && steps.merge.outputs.empty != 'true' && (steps.build.outcome == 'success' || steps.agent.outcome == 'success')
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           TAG: ${{ steps.pick.outputs.tag }}
@@ -284,7 +293,7 @@ jobs:
       # and therefore leave its outputs empty. Without it, a failure early enough in the job
       # produced no issue at all, which is the silent skip this is supposed to prevent.
       - name: Open an issue if this did not finish
-        if: failure() || (steps.pick.outputs.skip == 'false' && steps.pr.outcome != 'success')
+        if: failure() || (steps.pick.outputs.skip == 'false' && steps.merge.outputs.empty != 'true' && steps.pr.outcome != 'success')
         env:
           GH_TOKEN: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.pick.outputs.tag }}
