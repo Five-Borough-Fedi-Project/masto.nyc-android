@@ -88,8 +88,8 @@ jobs:
         continue-on-error: true
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://router.huggingface.co/v1' }}
-          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-ai/DeepSeek-V4-Flash' }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-v4-flash' }}
           DSH_HOME: ${{ github.workspace }}/.dsh-home
           DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
           DSH_TELEMETRY_MODE: local

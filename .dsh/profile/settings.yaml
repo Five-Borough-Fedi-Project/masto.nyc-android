@@ -1,9 +1,12 @@
 # Provider config. envsubst runs over this before it is copied into $DSH_HOME, so the vendor is a
 # repo-variable change rather than a code change.
 #
-# Defaults route through Hugging Face's Inference Providers router, which is OpenAI-compatible and
-# bills at the partner's rate with no HF markup. Point LLM_BASE_URL at https://api.deepseek.com to
-# go direct to DeepSeek instead; nothing else has to change.
+# Defaults go direct to DeepSeek. To route through a different vendor, set the LLM_BASE_URL and
+# LLM_MODEL repo variables; nothing else has to change. Hugging Face's Inference Providers router
+# (https://router.huggingface.co/v1, model deepseek-ai/DeepSeek-V4-Flash) is OpenAI-compatible and
+# bills at the partner's rate with no markup, if the billing relationship needs to move to a New
+# York company later. Note that caching may differ: DeepSeek bills cached input at $0.0028/M
+# against $0.14/M, and a routed partner may not offer the same discount.
 llm-pi-ai:
   providers:
     sync-provider:

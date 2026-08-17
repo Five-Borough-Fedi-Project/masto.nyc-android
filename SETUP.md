@@ -29,7 +29,7 @@ enable the cron.
 | Secret | Used by | Notes |
 | --- | --- | --- |
 | `BOT_PAT` | sync, agent | From step 1 |
-| `DEEPSEEK_API_KEY` | agent only | Never exposed to `ci.yml` |
+| `LLM_API_KEY` | agent only | DeepSeek API key. Never exposed to `ci.yml` |
 | `KEYSTORE_FILE` | release | Already set |
 | `KEYSTORE_PASSWORD` | release | Already set |
 
@@ -39,6 +39,13 @@ Optional repository variables:
 | --- | --- | --- |
 | `DSH_VERSION` | `0.5.3` | Pin. dsh is a developer preview |
 | `DSH_PERMISSION_MODE` | `auto` | Non-interactive runs need this |
+| `LLM_BASE_URL` | `https://api.deepseek.com` | Set to change inference vendor |
+| `LLM_MODEL` | `deepseek-v4-flash` | Must match whatever the base URL expects |
+
+Both LLM variables exist so the vendor is a settings change rather than a code change. To move the
+billing relationship to a New York company later, set them to `https://router.huggingface.co/v1`
+and `deepseek-ai/DeepSeek-V4-Flash`. Same model, same harness. Check what caching the routed
+partner offers before assuming the cost stays the same.
 
 ## 3. Repo settings
 
@@ -91,7 +98,7 @@ Force the agent path: temporarily commit a conflicting change to a file upstream
 dispatch again. Expect the agent job to run, a PR with a written explanation, and a session artifact
 on the run. Read that PR body carefully. It is your only view into what the model actually did.
 
-Force a failure: revoke `DEEPSEEK_API_KEY` and dispatch. Expect an issue titled "Upstream sync
+Force a failure: revoke `LLM_API_KEY` and dispatch. Expect an issue titled "Upstream sync
 failed", not a silent skip.
 
 ## 7. What to watch in the first month
@@ -100,8 +107,9 @@ Whether the clean path really is clean. If most weeks escalate to the agent, the
 entangled with upstream files and the fix is to shrink it, not to spend more tokens.
 
 Whether resolutions replay. The second time a similar conflict appears, rerere should handle it and
-the agent should not run. If it runs anyway, the rerere cache isn't surviving between runs and the
-cache key needs looking at.
+the agent should not run. If it runs anyway, check that the agent's PR actually committed something
+into `.rerere/`. That directory is the whole replay mechanism, and an empty one means every
+conflict is paid for twice.
 
 What the agent actually changed. Read the diffs for the first several agent PRs even if CI is green.
 CI proves the app builds and is still branded; it cannot prove the resolution was sensible.
