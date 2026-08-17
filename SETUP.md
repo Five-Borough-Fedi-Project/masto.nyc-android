@@ -49,7 +49,6 @@ Repository variables:
 | --- | --- | --- |
 | `SYNC_APP_ID` | none, required | The App ID from step 1 |
 | `DSH_VERSION` | `0.1.0-rc.6` | Pin. dsh is pre-1.0 and ships release candidates |
-| `DSH_PERMISSION_MODE` | `auto` | Non-interactive runs need this |
 | `LLM_BASE_URL` | `https://api.deepseek.com` | Set to change inference vendor |
 | `LLM_MODEL` | `deepseek-v4-flash` | Must match whatever the base URL expects |
 

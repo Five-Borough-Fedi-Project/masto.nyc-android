@@ -219,8 +219,6 @@ jobs:
           LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
           LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-v4-flash' }}
           DSH_HOME: ${{ github.workspace }}/.dsh-home
-          DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
-          DSH_TELEMETRY_MODE: local
           DSH_TOOLS_MODE: native
           GH_TOKEN: ${{ steps.app.outputs.token }}
           TAG: ${{ steps.pick.outputs.tag }}
