@@ -73,8 +73,6 @@ jobs:
         timeout-minutes: 10
         env:
           DSH_HOME: ${{ github.workspace }}/.dsh-home
-          DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
-          DSH_TELEMETRY_MODE: local
           DSH_TOOLS_MODE: native
         run: |
           set -euo pipefail
