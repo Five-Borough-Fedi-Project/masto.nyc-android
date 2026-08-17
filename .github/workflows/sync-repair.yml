@@ -1,0 +1,150 @@
+name: Repair a failed sync PR
+
+# Closes the loop. Without this the agent gets one blind shot: it pushes, CI fails, and nothing
+# ever tells it. Here a CI failure on a sync/* PR hands the agent its own failure output and lets
+# it try again on the same branch.
+#
+# Deliberately bounded. It only touches sync/* branches, only reacts to CI failing, and gives up
+# after MAX_ATTEMPTS so a resolution it cannot fix burns a known amount rather than looping.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sync-repair-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+env:
+  MAX_ATTEMPTS: 2
+
+jobs:
+  repair:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      startsWith(github.event.workflow_run.head_branch, 'sync/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.BOT_PAT }}
+
+      - name: Count previous attempts
+        id: attempts
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          N=$(git log --oneline origin/main.."$BRANCH" --grep="agent repair attempt" | wc -l)
+          echo "count=$N" >> "$GITHUB_OUTPUT"
+          if [ "$N" -ge "$MAX_ATTEMPTS" ]; then
+            echo "give_up=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "give_up=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "attempt $((N+1)) of $MAX_ATTEMPTS"
+
+      - name: Collect the CI failure
+        id: failure
+        if: steps.attempts.outputs.give_up == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed 2>/dev/null \
+            | tail -200 > /tmp/ci-failure.txt || true
+          wc -l /tmp/ci-failure.txt
+
+      - uses: actions/setup-java@v4
+        if: steps.attempts.outputs.give_up == 'false'
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - uses: android-actions/setup-android@v4
+        if: steps.attempts.outputs.give_up == 'false'
+        with:
+          packages: "platforms;android-37.0 platform-tools"
+
+      - uses: actions/setup-node@v4
+        if: steps.attempts.outputs.give_up == 'false'
+        with:
+          node-version: 22
+
+      - name: Repair with the agent
+        id: agent
+        if: steps.attempts.outputs.give_up == 'false'
+        timeout-minutes: 30
+        continue-on-error: true
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DSH_HOME: ${{ github.workspace }}/.dsh-home
+          DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
+          DSH_TELEMETRY_MODE: local
+          DSH_TOOLS_MODE: native
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          DSH_VERSION: ${{ vars.DSH_VERSION || '0.5.3' }}
+        run: |
+          set -euo pipefail
+          npm i -g "@deepseek-ai/dsh@${DSH_VERSION}"
+          mkdir -p "$DSH_HOME/profiles/sync"
+          cp .dsh/profile/package.json .dsh/profile/cordis.patch.yml "$DSH_HOME/profiles/sync/"
+          printf 'DEEPSEEK_API_KEY=%s\n' "$DEEPSEEK_API_KEY" > "$DSH_HOME/.env"
+          chmod 600 "$DSH_HOME/.env"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          git config user.name "masto.nyc sync bot"
+          git config user.email "noreply@masto.nyc"
+
+          # Same stable prefix as the sync run, so the cached part of the context still hits.
+          {
+            cat FORK.md
+            echo
+            echo "You previously resolved an upstream merge on branch $BRANCH. CI then failed."
+            echo "Fix it. Do not revert your resolution wholesale; find what actually broke."
+            echo "Run ./gradlew assembleDebug and ./gradlew lintDebug until both pass, then commit"
+            echo "and push to the same branch. Do not open a new PR; one already exists."
+            echo "Keep every item in FORK.md's touched-files table intact."
+            echo
+            echo "## CI failure output"
+            echo '```'
+            cat /tmp/ci-failure.txt
+            echo '```'
+          } > /tmp/task.md
+          dsh --profile sync "$(cat /tmp/task.md)" | tee /tmp/agent-output.txt
+
+          if ! git diff --quiet HEAD; then
+            git commit -am "agent repair attempt $(( ${{ steps.attempts.outputs.count }} + 1 ))"
+          fi
+          git push origin "$BRANCH"
+
+      - name: Comment on the PR
+        if: steps.attempts.outputs.give_up == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          gh pr comment "$BRANCH" --repo "$GITHUB_REPOSITORY" --body "$(printf 'CI failed, so the agent had another go (attempt %s of %s).\n\n%s\n\nCI will re-run on the new commit. That result, not this comment, is what counts.\n' "$(( ${{ steps.attempts.outputs.count }} + 1 ))" "$MAX_ATTEMPTS" "$(head -c 3000 /tmp/agent-output.txt 2>/dev/null || echo 'No output captured.')")" || true
+
+      - name: Stop and ask for a human
+        if: steps.attempts.outputs.give_up == 'true' || steps.agent.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          gh pr comment "$BRANCH" --repo "$GITHUB_REPOSITORY" --body "$(printf 'The agent has used its %s repair attempts on this branch and CI is still failing. No further automatic attempts will run.\n\nThis needs a person, or a second opinion from the Copilot coding agent. If you resolve it by hand, do it with `rerere.enabled` on and commit `.git/rr-cache` into `.rerere/` so the resolution replays on future syncs.\n' "$MAX_ATTEMPTS")" || true
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Sync PR needs a human: $BRANCH" --label "sync-failure" \
+            --body "Automatic repair gave up on \`$BRANCH\` after $MAX_ATTEMPTS attempts." || true
