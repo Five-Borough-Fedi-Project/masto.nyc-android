@@ -40,8 +40,8 @@ access to the DeepSeek key and never reads the agent's claims.
 
 ## Where the containment actually is
 
-Not in the sandbox setting. The agent runs on a throwaway runner with a token that cannot push to
-`main`, cannot merge, and cannot create releases. The signing keystore is not present in that job at
+Not in the sandbox setting. The agent runs on a throwaway runner with a GitHub App token that is
+minted for that run, expires in an hour, and cannot push to `main`, merge, or create releases. The signing keystore is not present in that job at
 all; it only exists in the release workflow, which no agent touches.
 
 `git rerere`'s cache is persisted through `actions/cache`. Without that it would be pointless,

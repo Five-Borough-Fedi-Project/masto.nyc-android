@@ -31,16 +31,22 @@ jobs:
       startsWith(github.event.workflow_run.head_branch, 'sync/')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.SYNC_APP_ID }}
+          private-key: ${{ secrets.SYNC_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
-          token: ${{ secrets.BOT_PAT }}
+          token: ${{ steps.app.outputs.token }}
 
       - name: Count previous attempts
         id: attempts
         env:
-          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           set -euo pipefail
@@ -57,7 +63,7 @@ jobs:
         id: failure
         if: steps.attempts.outputs.give_up == 'false'
         env:
-          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
@@ -94,7 +100,7 @@ jobs:
           DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
           DSH_TELEMETRY_MODE: local
           DSH_TOOLS_MODE: native
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
           DSH_VERSION: ${{ vars.DSH_VERSION || '0.5.3' }}
         run: |
@@ -107,8 +113,8 @@ jobs:
           chmod 600 "$DSH_HOME/.env"
           echo "provider: $LLM_BASE_URL  model: $LLM_MODEL"
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-          git config user.name "masto.nyc sync bot"
-          git config user.email "noreply@masto.nyc"
+          git config user.name "masto-nyc-sync[bot]"
+          git config user.email "${{ vars.SYNC_APP_ID }}+masto-nyc-sync[bot]@users.noreply.github.com"
 
           # Same stable prefix as the sync run, so the cached part of the context still hits.
           {
@@ -135,7 +141,7 @@ jobs:
       - name: Comment on the PR
         if: steps.attempts.outputs.give_up == 'false'
         env:
-          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           set -euo pipefail
@@ -144,7 +150,7 @@ jobs:
       - name: Stop and ask for a human
         if: steps.attempts.outputs.give_up == 'true' || steps.agent.outcome != 'success'
         env:
-          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           set -euo pipefail

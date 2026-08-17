@@ -37,10 +37,19 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      # A GitHub App rather than a bot account. Tokens are minted per run and expire in an hour,
+      # there is no second user to license or babysit, and unlike GITHUB_TOKEN the events it
+      # creates do trigger other workflows, which is what lets ci.yml see the sync PR at all.
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.SYNC_APP_ID }}
+          private-key: ${{ secrets.SYNC_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app.outputs.token }}
 
       - uses: actions/setup-java@v4
         with:
@@ -62,8 +71,8 @@ jobs:
       - name: Prepare git and load recorded conflict resolutions
         run: |
           set -euo pipefail
-          git config user.name "masto.nyc sync bot"
-          git config user.email "noreply@masto.nyc"
+          git config user.name "masto-nyc-sync[bot]"
+          git config user.email "${{ vars.SYNC_APP_ID }}+masto-nyc-sync[bot]@users.noreply.github.com"
           git config rerere.enabled true
           git config rerere.autoUpdate true
           # .rerere/ is committed. actions/cache would be wrong here: GitHub evicts entries not
@@ -191,7 +200,7 @@ jobs:
           DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
           DSH_TELEMETRY_MODE: local
           DSH_TOOLS_MODE: native
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           TAG: ${{ steps.pick.outputs.tag }}
           BRANCH: ${{ steps.pick.outputs.branch }}
         run: |
@@ -225,7 +234,7 @@ jobs:
         id: pr
         if: steps.pick.outputs.skip == 'false' && (steps.build.outcome == 'success' || steps.agent.outcome == 'success')
         env:
-          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           TAG: ${{ steps.pick.outputs.tag }}
           BRANCH: ${{ steps.pick.outputs.branch }}
           AGENT_RAN: ${{ steps.brief.outputs.needed }}
@@ -260,7 +269,7 @@ jobs:
       - name: Open an issue if this did not finish
         if: steps.pick.outputs.skip == 'false' && steps.pr.outcome != 'success'
         env:
-          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           TAG: ${{ steps.pick.outputs.tag }}
         run: |
           set -euo pipefail

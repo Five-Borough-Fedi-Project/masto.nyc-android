@@ -3,40 +3,51 @@
 What you have to do by hand before the weekly sync can run. Nothing here is optional except where
 it says so.
 
-## 1. Bot account and token
+## 1. GitHub App
 
-Create a second GitHub account for the bot and invite it to the org with write access to this repo
-only. GitHub's terms allow machine accounts; don't use your own account, because the point is to
-have a token you can scope and revoke without touching your access.
+The original design called for a bot account with a fine-grained PAT. A GitHub App is better on
+every axis: no second user account to create, license or hand an email address, no token expiry to
+babysit, permissions scoped to this repo, and a clear `[bot]` identity in the UI.
 
-From the bot account, create a fine-grained personal access token scoped to
-`Five-Borough-Fedi-Project/masto.nyc-android` with:
+It is also not optional in the way it first appears. The default `GITHUB_TOKEN` cannot be used here,
+because events it creates do not trigger other workflows, so a PR it opened would never run
+`ci.yml`. Losing that means losing the verification gate, which is the whole point.
 
-- Contents: read and write
-- Pull requests: read and write
-- Issues: read and write
+Org settings → Developer settings → GitHub Apps → New GitHub App.
 
-Save it as the `BOT_PAT` repository secret.
+- Name: `masto-nyc-sync`
+- Homepage: the repo URL is fine
+- Uncheck Webhook Active. Nothing needs to call back.
+- Repository permissions: Contents read/write, Pull requests read/write, Issues read/write
+- Where can this be installed: only this account
+
+Create it, then Install App on `masto.nyc-android` only. Note the App ID, and generate a private
+key, which downloads a `.pem`.
+
+- Repository variable `SYNC_APP_ID` = the App ID
+- Repository secret `SYNC_APP_PRIVATE_KEY` = the whole contents of the `.pem`, including the
+  BEGIN and END lines
 
 **A correction to the original design.** It said to scope the agent's write access to `sync/*`
-branches through the token. Fine-grained PATs cannot do that; they scope to repositories and
-permission types, with no branch patterns. Branch-level restriction comes from a ruleset instead,
-which is step 4. Until that ruleset exists, `BOT_PAT` can push to `main`, so do step 4 before you
-enable the cron.
+branches through the token. Neither a PAT nor an App installation token can do that; both scope to
+repositories and permission types, with no branch patterns. Branch-level restriction comes from a
+ruleset instead, which is step 4. Until that ruleset exists the app can push to `main`, so do step 4
+before you enable the cron.
 
 ## 2. Secrets
 
 | Secret | Used by | Notes |
 | --- | --- | --- |
-| `BOT_PAT` | sync, agent | From step 1 |
+| `SYNC_APP_PRIVATE_KEY` | sync, repair | The App's `.pem` from step 1 |
 | `LLM_API_KEY` | agent only | DeepSeek API key. Never exposed to `ci.yml` |
 | `KEYSTORE_FILE` | release | Already set |
 | `KEYSTORE_PASSWORD` | release | Already set |
 
-Optional repository variables:
+Repository variables:
 
 | Variable | Default | Notes |
 | --- | --- | --- |
+| `SYNC_APP_ID` | none, required | The App ID from step 1 |
 | `DSH_VERSION` | `0.5.3` | Pin. dsh is a developer preview |
 | `DSH_PERMISSION_MODE` | `auto` | Non-interactive runs need this |
 | `LLM_BASE_URL` | `https://api.deepseek.com` | Set to change inference vendor |
