@@ -3,30 +3,30 @@
 A fork of [mastodon/mastodon-android](https://github.com/mastodon/mastodon-android), rebranded as
 Masto NYC and locked to masto.nyc.
 
-Everything below exists so that pulling upstream stays a chore rather than a project. The fewer
-upstream lines we touch, the less there is to reconcile.
+The point of everything below is to keep pulling upstream cheap. The fewer upstream lines we touch,
+the less there is to reconcile.
 
 ## Conventions
 
-**Values live in `ForkConfig`, not scattered through upstream files.**
-[`ForkConfig.java`](mastodon/src/main/java/org/joinmastodon/android/fork/ForkConfig.java) holds the
-server domain and anything else specific to us. It's a new file in a new package, so it can never
-conflict. When an upstream file needs one of these values, import it and read it from there; that
-keeps the edit down to a line or two.
+Fork-specific values belong in
+[`ForkConfig.java`](mastodon/src/main/java/org/joinmastodon/android/fork/ForkConfig.java) rather
+than scattered through upstream files. It holds the server domain and anything else particular to
+us, and because it's a new file in a new package it can never conflict. When an upstream file needs
+one of those values, import it and read it from there, which keeps the edit down to a line or two.
 
-**New strings go in a new file.** Put genuinely new strings in
-`mastodon/src/main/res/values/strings_nyc.xml` (create it when you need it), never appended to
-upstream's `strings.xml`. Overrides of existing upstream strings have to be edited in place, since
-Android won't allow the same resource name in two files in one source set.
+Genuinely new strings go in `mastodon/src/main/res/values/strings_nyc.xml`, which you'll have to
+create the first time. Don't append them to upstream's `strings.xml`. Overrides of existing upstream
+strings do have to be edited in place, because Android won't allow the same resource name in two
+files in one source set.
 
-**Don't delete upstream files.** `InstanceChooserLoginFragment`, `InstanceCatalogSignupFragment` and
-`InstanceCatalogFragment` are unreachable now, but they stay. Deleting a file upstream still
-maintains turns every future change to it into a modify/delete conflict, which is worse to deal with
-than some dead code. Same for the `intro_bottom_sheet` layout and the `welcome_*`, `pick_server` and
-`learn_more` strings.
+Don't delete upstream files. `InstanceChooserLoginFragment`, `InstanceCatalogSignupFragment` and
+`InstanceCatalogFragment` are unreachable now, but they stay, because deleting a file that upstream
+still maintains turns every future change to it into a modify/delete conflict. Carrying some dead
+code is easier to live with. The same goes for the `intro_bottom_sheet` layout and the `welcome_*`,
+`pick_server` and `learn_more` strings.
 
-**Mark non-obvious edits** with a `// masto.nyc fork:` comment, so it's clear during a merge that
-the line is ours on purpose.
+Where an edit to an upstream file isn't self-explanatory, mark it with a `// masto.nyc fork:`
+comment so it's clear during a merge that the line is ours on purpose.
 
 ## Merging upstream
 
@@ -57,7 +57,8 @@ Conflicts should be confined to the files below.
 | `res/mipmap-*/ic_launcher.png` | replaced artwork |
 | `README.md`, `fastlane/metadata/android/en-US/*` | store listing and repo docs |
 
-New files can't conflict: `ForkConfig.java`, `ci_version.gradle`, `FORK.md`, `deploy/`, and the
+These are new files, so they can never conflict: `ForkConfig.java`, `ci_version.gradle`,
+`FORK.md`, `deploy/`, and the
 generated artwork under `res/drawable-*dpi/`.
 
 Changing `applicationId` also moves the OAuth callback scheme (`${applicationId}-auth://callback`)
@@ -66,7 +67,8 @@ ends up with `nyc.masto.android-auth`.
 
 ### Why `compileSdkMinor 0` is there
 
-A build fix, not a branding change, and upstream hits it too on a fresh SDK. Google no longer
+This is a build fix rather than a branding change, and upstream hits it too on a fresh SDK. Google
+no longer
 publishes a bare `platforms;android-37`. Every API 37 platform is minor-versioned (`android-37.0`,
 `android-37.1`, plus `37.2` betas) and `source.properties` reports `AndroidVersion.ApiLevel=37.0`,
 so upstream's bare `compileSdk 37` fails with:
@@ -116,9 +118,11 @@ reads it before overriding.
 arithmetic collides, since `1.0.1000` would equal `1.1.0`. Both `ci_version.gradle` and the workflow
 reject it, along with any tag that isn't exactly three numbers.
 
-The ban on suffixes isn't stylistic. `GithubSelfUpdaterImpl` matches `/v?(\d+)\.(\d+)(?:\.(\d+))?/`
+Suffixes are banned for a mechanical reason. `GithubSelfUpdaterImpl` matches
+`/v?(\d+)\.(\d+)(?:\.(\d+))?/`
 and discards anything past the third number, so `v1.0.0-beta` and `v1.0.0` compare equal and no
-update is ever offered. Nothing errors, hence the up-front check.
+update is ever offered. Nothing errors when that happens, so the workflow checks the tag before it
+builds.
 
 While you're in that file: there's a real bug at `GithubSelfUpdaterImpl:124`, where the
 current-version branch tests `matcher.group(3)` (the tag) but parses `curMatcher.group(3)` (the
@@ -144,7 +148,8 @@ Upstream's license notice requires a redistributed fork to use its own name and 
 trademarked marks had to go. Identity artwork is Five Borough Fedi Project's now. The background
 illustrations are still upstream's, tracked below.
 
-Replacements keep the same filename and path, so no code or layout changes, and no merge surface.
+Replacements keep the same filename and path, so nothing in the code or layouts has to change and
+there's no extra merge surface.
 
 The launcher icon comes from `5bfplogo.png` (yellow elephant, green Liberty crown). Generated layers
 sit in `drawable-{m,h,x,xx,xxx}hdpi/ic_launcher_elephant{,_mono}.png` on a 108dp canvas with the art
@@ -180,7 +185,7 @@ became bitmaps. Both were deliberate:
 | `drawable-anydpi-v26/ic_launcher_foreground.xml` | bitmap wrapper | wraps `ic_launcher_elephant` |
 | `drawable-anydpi-v26/ic_launcher_background.xml` | shape | flat `#FFFFFF`, one line to retheme |
 | `drawable-anydpi-v26/ic_launcher_monochrome.xml` | bitmap wrapper | wraps `ic_launcher_elephant_mono` |
-| `res/mipmap-*/ic_launcher.png` | PNG ×5 | 48–192px, API 23–25 only |
+| `res/mipmap-*/ic_launcher.png` | PNG ×5 | 48-192px, API 23-25 only |
 | `res/drawable/splash_logo.xml` | bitmap wrapper | wraps `splash_logo_5bfp` |
 | `res/drawable/ic_ntf_logo.xml` | vector | 24×24dp, Liberty crown |
 | `fastlane/.../images/icon.png` | PNG | 512×512, full-bleed, opaque |
@@ -215,7 +220,7 @@ change those with the art if the palette doesn't match.
 
 ### Optional
 
-- `fastlane/metadata/android/en-US/images/phoneScreenshots/1–8.png` still show upstream branding.
+- `fastlane/metadata/android/en-US/images/phoneScreenshots/1-8.png` still show upstream branding.
 - `drawable-nodpi/donation_successful_art.webp` is already unreachable, since upstream only offers
   donations to `mastodon.social` and `mastodon.online` accounts.
 
@@ -229,8 +234,7 @@ one that matters: without it Android can't verify this app's claim on `https://m
 the `autoVerify="true"` filter in the manifest quietly does nothing.
 
 `deploy/cloudflare/` is a Worker that serves it, deployed by
-`.github/workflows/deploy-assetlinks.yml` on every published release. Two things there are
-load-bearing:
+`.github/workflows/deploy-assetlinks.yml` on every published release. Two details there matter:
 
 - The route is scoped to exactly `masto.nyc/.well-known/assetlinks.json`. Widening it to
   `/.well-known/*` would swallow Mastodon's webfinger, nodeinfo and host-meta endpoints and break
@@ -263,9 +267,10 @@ declare `CATEGORY_APP_EMAIL`.
 
 ## Known gaps
 
-- **Non-English branding.** `app_name` is `translatable="false"` and lives only in `values/`, so the
-  app name rebrands everywhere. But some translated strings in `values-*/strings.xml` still say
-  "Mastodon" in prose. Overriding those means editing 60+ Crowdin-managed files, which is the exact
-  merge pain this structure exists to avoid.
-- **Donation prompts** are already inert, since upstream only shows them to `mastodon.social` and
-  `mastodon.online` accounts.
+`app_name` is `translatable="false"` and lives only in `values/`, so the app name rebrands in every
+locale. Some translated strings in `values-*/strings.xml` still say "Mastodon" in prose, though.
+Overriding those means editing 60+ Crowdin-managed files, which is the exact merge pain this
+structure exists to avoid.
+
+Donation prompts are already inert, since upstream only shows them to `mastodon.social` and
+`mastodon.online` accounts.
