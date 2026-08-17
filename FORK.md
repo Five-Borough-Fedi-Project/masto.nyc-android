@@ -1,39 +1,32 @@
 # Fork notes
 
-This repo is a fork of [mastodon/mastodon-android](https://github.com/mastodon/mastodon-android),
-rebranded as **Masto NYC** and locked to the **masto.nyc** server.
+A fork of [mastodon/mastodon-android](https://github.com/mastodon/mastodon-android), rebranded as
+Masto NYC and locked to masto.nyc.
 
-The whole point of the structure below is that pulling upstream stays a routine chore, not a
-project. Every rule here exists to keep the number of upstream lines we touch as small as possible.
+Everything below exists so that pulling upstream stays a chore rather than a project. The fewer
+upstream lines we touch, the less there is to reconcile.
 
 ## Conventions
 
-**1. Values live in `ForkConfig`, not scattered through upstream files.**
+**Values live in `ForkConfig`, not scattered through upstream files.**
+[`ForkConfig.java`](mastodon/src/main/java/org/joinmastodon/android/fork/ForkConfig.java) holds the
+server domain and anything else specific to us. It's a new file in a new package, so it can never
+conflict. When an upstream file needs one of these values, import it and read it from there; that
+keeps the edit down to a line or two.
 
-[`ForkConfig.java`](mastodon/src/main/java/org/joinmastodon/android/fork/ForkConfig.java) holds
-the server domain and anything else that differs from upstream. It is a new file in a new package,
-so it can never conflict. When you need a fork-specific value inside an upstream file, add an import
-and read it from `ForkConfig` — that keeps the upstream edit down to a line or two.
+**New strings go in a new file.** Put genuinely new strings in
+`mastodon/src/main/res/values/strings_nyc.xml` (create it when you need it), never appended to
+upstream's `strings.xml`. Overrides of existing upstream strings have to be edited in place, since
+Android won't allow the same resource name in two files in one source set.
 
-**2. New strings go in a new file.**
+**Don't delete upstream files.** `InstanceChooserLoginFragment`, `InstanceCatalogSignupFragment` and
+`InstanceCatalogFragment` are unreachable now, but they stay. Deleting a file upstream still
+maintains turns every future change to it into a modify/delete conflict, which is worse to deal with
+than some dead code. Same for the `intro_bottom_sheet` layout and the `welcome_*`, `pick_server` and
+`learn_more` strings.
 
-Genuinely new strings belong in `mastodon/src/main/res/values/strings_nyc.xml` (create it when the
-first one is needed), never appended to upstream's `strings.xml`. Only *overrides* of an existing
-upstream string may be edited in place in `values/strings.xml`, because Android forbids the same
-resource name in two files within a source set.
-
-**3. Don't delete upstream files.**
-
-`InstanceChooserLoginFragment`, `InstanceCatalogSignupFragment`, and `InstanceCatalogFragment` are
-now unreachable — nothing navigates to them. They are deliberately left in the tree anyway. Deleting
-a file that upstream still maintains turns every future change to it into a modify/delete conflict,
-which is far more annoying to resolve than carrying dead code. The same goes for the
-`intro_bottom_sheet` layout and the `welcome_*` / `pick_server` / `learn_more` strings.
-
-**4. Mark non-obvious edits.**
-
-Where a change to an upstream file isn't self-explanatory, prefix the comment with
-`// masto.nyc fork:` so it's obvious during a merge that the line is intentionally ours.
+**Mark non-obvious edits** with a `// masto.nyc fork:` comment, so it's clear during a merge that
+the line is ours on purpose.
 
 ## Merging upstream
 
@@ -43,66 +36,64 @@ git fetch upstream
 git merge upstream/master
 ```
 
-Conflicts, if any, will be confined to the files listed below.
+Conflicts should be confined to the files below.
 
 ## Upstream files this fork touches
 
 | File | Change |
 | --- | --- |
 | `mastodon/build.gradle` | `applicationId` → `nyc.masto.android`; added `compileSdkMinor 0` |
-| `mastodon/src/main/AndroidManifest.xml` | deep links point at `masto.nyc` instead of `mastodon.social` / `mastodon.online` |
-| `mastodon/src/main/res/values/strings.xml` | `app_name`, `settings_contribute`, `settings_app_version` |
+| `mastodon/src/main/AndroidManifest.xml` | deep links point at `masto.nyc` |
+| `mastodon/src/main/res/values/strings.xml` | `app_name`, `settings_contribute`, `settings_app_version`, `local_timeline_info_banner` |
 | `mastodon/src/main/res/values/urls.xml` | `github_url`, `privacy_policy_url` |
-| `mastodon/src/main/res/layout/fragment_splash.xml` | dropped "Pick another server", "Learn more", and the now-unused progress overlay |
-| `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no server catalog request |
-| `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at our policy |
+| `mastodon/src/main/res/layout/fragment_splash.xml` | dropped the server picker and the "Learn more" sheet |
+| `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
+| `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
-| `.../api/MastodonAPIController.java`, `.../MastodonApp.java` | `User-Agent`; see [below](#user-agent) |
-| `.../updater/GithubSelfUpdaterImpl.java` | githubRelease builds self-update from this repo, not upstream's |
-| `res/drawable/splash_logo.xml`, `res/drawable/ic_ntf_logo.xml` | replaced artwork; see [Artwork](#artwork) |
+| `.../api/MastodonAPIController.java`, `.../MastodonApp.java` | `User-Agent`, see [below](#user-agent) |
+| `.../updater/GithubSelfUpdaterImpl.java` | self-update from this repo, not upstream's |
+| `res/drawable/splash_logo.xml`, `res/drawable/ic_ntf_logo.xml` | replaced artwork |
 | `res/drawable-anydpi-v26/ic_launcher_{foreground,background,monochrome}.xml` | replaced artwork |
 | `res/mipmap-*/ic_launcher.png` | replaced artwork |
 | `README.md`, `fastlane/metadata/android/en-US/*` | store listing and repo docs |
 
-New files, which can never conflict: `ForkConfig.java`, `FORK.md`, `deploy/`, and the generated
-artwork under `res/drawable-*dpi/` (`ic_launcher_elephant{,_mono}.png`, `splash_logo_5bfp.png`).
+New files can't conflict: `ForkConfig.java`, `ci_version.gradle`, `FORK.md`, `deploy/`, and the
+generated artwork under `res/drawable-*dpi/`.
 
-Changing `applicationId` automatically carries the OAuth callback scheme
-(`${applicationId}-auth://callback`) and the FileProvider authority along with it — neither needs a
-separate edit. Verified in the built APK: the manifest ends up with `nyc.masto.android-auth`.
+Changing `applicationId` also moves the OAuth callback scheme (`${applicationId}-auth://callback`)
+and the FileProvider authority, so neither needs editing. The built APK confirms it: the manifest
+ends up with `nyc.masto.android-auth`.
 
 ### Why `compileSdkMinor 0` is there
 
-This one is not a branding change, it is a build fix, and upstream would hit it too on a fresh SDK.
-Google no longer publishes a bare `platforms;android-37` — every API 37 platform is minor-versioned
-(`android-37.0`, `android-37.1`, plus `37.2` betas), and `source.properties` reports
-`AndroidVersion.ApiLevel=37.0`. Upstream's bare `compileSdk 37` therefore fails with:
+A build fix, not a branding change, and upstream hits it too on a fresh SDK. Google no longer
+publishes a bare `platforms;android-37`. Every API 37 platform is minor-versioned (`android-37.0`,
+`android-37.1`, plus `37.2` betas) and `source.properties` reports `AndroidVersion.ApiLevel=37.0`,
+so upstream's bare `compileSdk 37` fails with:
 
     Failed to find target with hash string 'android-37' in: <sdk>
 
-AGP 8.13.2 does support `compileSdkMinor` even though upstream does not use it, so adding
-`compileSdkMinor 0` next to `compileSdk 37` resolves the platform to `android-37.0` and the build
-succeeds. If a future upstream merge adopts a different fix for the same problem, drop this line.
+AGP 8.13.2 supports `compileSdkMinor` even though upstream doesn't use it, so adding
+`compileSdkMinor 0` resolves the platform to `android-37.0`. Drop the line if a future upstream
+merge fixes this another way.
 
 ### User-Agent
 
 Upstream sends `MastodonAndroid/<versionName>`, which would make this fork indistinguishable from
-the official app in any instance's logs. It now sends `MastoNYCAndroid/<versionName>`, from
+the official app in anyone's server logs. We send `MastoNYCAndroid/<versionName>`, from
 `ForkConfig.USER_AGENT_PRODUCT`.
 
-There are **two** places that set it, and it is easy to fix only one — a case-sensitive grep for
-`userAgent` misses `NetworkUtils.setUserAgent`:
+Two places set it, and it's easy to catch only one, because a case-sensitive grep for `userAgent`
+misses `NetworkUtils.setUserAgent`:
 
-| Where | Covers |
-| --- | --- |
-| `MastodonAPIController.submitRequest` | every Mastodon API call |
-| `MastodonApp.onCreate` → `NetworkUtils.setUserAgent` | appkit's image/media fetching |
+- `MastodonAPIController.submitRequest` covers every Mastodon API call
+- `MastodonApp.onCreate` covers appkit's image and media fetching
 
-The `Android` suffix is deliberate: it keeps the platform visible to server admins and anything
-already matching `*Android/*` keeps working. No device model or OS version is included — upstream
-sends none, and adding them would hand every instance a fingerprinting signal for no user benefit.
+The `Android` suffix keeps the platform visible to admins, and anything already matching
+`*Android/*` keeps working. No device model or OS version, because upstream sends none and it would
+just hand every instance a fingerprinting signal.
 
-Worth re-checking after an upstream merge that introduces new HTTP clients. To audit a built APK:
+Worth re-checking after an upstream merge that adds new HTTP clients:
 
 ```bash
 for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
@@ -112,175 +103,169 @@ done
 
 ### Versioning
 
-Release tags must be exactly `vX.Y.Z`; see the README's Releasing section for the user-facing rule.
-The mechanics, and why they are arranged this way:
+The user-facing rule is in the README. The mechanics:
 
-`mastodon/ci_version.gradle` derives `versionName` and `versionCode` from `RELEASE_TAG` and is
-applied by CI via `apply from:`, the same trick `ci_signing.gradle` uses. **`build.gradle` is never
-edited.** Those two version lines are bumped by upstream on every one of their releases, so owning
-them would mean a merge conflict every single time we pull — and it would destroy the one useful
-side effect of leaving them alone, which is that `build.gradle`'s `versionName` stays an accurate,
-automatically maintained record of which upstream release this fork is built on. CI reads it before
-overriding.
+`mastodon/ci_version.gradle` derives `versionName` and `versionCode` from `RELEASE_TAG`, applied by
+CI with `apply from:`, the same way `ci_signing.gradle` works. `build.gradle` is never edited.
+Upstream bumps those two version lines on every release, so owning them would mean a conflict every
+time we pull, and it would throw away the useful side effect of leaving them alone: `build.gradle`'s
+`versionName` stays an accurate record of which upstream release we're on, maintained for free. CI
+reads it before overriding.
 
-`versionCode = major*1000000 + minor*1000 + patch`, so minor and patch are capped at 999 — beyond
-that the arithmetic collides (`1.0.1000` would equal `1.1.0`). Both `ci_version.gradle` and the
-workflow reject that, along with any tag that isn't exactly three numbers.
+`versionCode = major*1000000 + minor*1000 + patch`, which caps minor and patch at 999. Past that the
+arithmetic collides, since `1.0.1000` would equal `1.1.0`. Both `ci_version.gradle` and the workflow
+reject it, along with any tag that isn't exactly three numbers.
 
-The suffix ban is not stylistic. `GithubSelfUpdaterImpl` matches
-`/v?(\d+)\.(\d+)(?:\.(\d+))?/` and discards anything after the third number, so `v1.0.0-beta` and
-`v1.0.0` compare equal and no update is ever offered. It fails silently, hence the up-front check.
+The ban on suffixes isn't stylistic. `GithubSelfUpdaterImpl` matches `/v?(\d+)\.(\d+)(?:\.(\d+))?/`
+and discards anything past the third number, so `v1.0.0-beta` and `v1.0.0` compare equal and no
+update is ever offered. Nothing errors, hence the up-front check.
 
-While you're in that file: upstream has a genuine bug at `GithubSelfUpdaterImpl:124`, where the
+While you're in that file: there's a real bug at `GithubSelfUpdaterImpl:124`, where the
 current-version branch tests `matcher.group(3)` (the tag) but parses `curMatcher.group(3)` (the
-installed version). A three-part tag against a two-part installed version throws, the surrounding
-catch swallows it, and update detection stops working with no visible symptom. Standardising on
-three-part versions avoids it. Worth sending upstream.
+installed version). A three-part tag against a two-part installed version throws, the catch swallows
+it, and update detection dies with no symptom. Three-part versions everywhere avoids it. Worth
+sending upstream.
 
 ## Toolchain
 
-- **JDK 21** (Temurin), matching what both CI workflows pin. Do not go newer: the Gradle wrapper
-  pulls Gradle 8.13, which predates JDK 24/25 support.
-- **Android SDK Platform 37.0** — note the `.0`; see above.
-- Build-Tools are downloaded by AGP itself once SDK licences are accepted; no need to pin a version.
+- JDK 21 (Temurin), matching both CI workflows. Nothing newer: the wrapper pulls Gradle 8.13, which
+  predates JDK 24 and 25.
+- Android SDK Platform 37.0. Note the `.0`, per above.
+- AGP downloads Build-Tools itself once SDK licences are accepted, so there's no version to pin.
 - `local.properties` (gitignored) needs `sdk.dir=<path to SDK>`.
 
-Verified: `./gradlew assembleDebug` produces a 7.2 MB APK with package `nyc.masto.android` and
-label `Masto NYC`, which installs and runs on a physical device — splash, signup, email activation
-polling and branding all confirmed on-device, not just compiled.
+`./gradlew assembleDebug` produces a 7.2 MB APK with package `nyc.masto.android` and label
+Masto NYC. It's been installed and used on a physical device, not just compiled: splash, signup,
+email activation polling and branding all check out.
 
 ## Artwork
 
-Upstream's license notice requires a redistributed fork to use a distinct name **and icon**, so the
-trademarked marks had to go. The identity artwork is now Five Borough Fedi Project's; the
-background illustrations are still upstream's and are tracked below.
+Upstream's license notice requires a redistributed fork to use its own name and icon, so the
+trademarked marks had to go. Identity artwork is Five Borough Fedi Project's now. The background
+illustrations are still upstream's, tracked below.
 
-Replacements keep the **same filename and same path** — nothing in code or layout needs to change,
-and it keeps the merge surface at zero.
+Replacements keep the same filename and path, so no code or layout changes, and no merge surface.
 
-The launcher icon source art is `5bfplogo.png` (yellow elephant, green Lady Liberty crown); the
-generated layers live in `drawable-{m,h,x,xx,xxx}hdpi/ic_launcher_elephant{,_mono}.png` on a 108dp
-canvas with the art at 62% so no mask clips the trunk or crown.
+The launcher icon comes from `5bfplogo.png` (yellow elephant, green Liberty crown). Generated layers
+sit in `drawable-{m,h,x,xx,xxx}hdpi/ic_launcher_elephant{,_mono}.png` on a 108dp canvas with the art
+at 62%, so no launcher mask clips the trunk or crown.
 
-The splash logo is the 5BFP lockup, keyed off its white JPEG background. Two things had to be
-separated by hand there, and they're worth knowing if the art is ever re-exported:
+The splash logo is the 5BFP lockup, keyed off its white JPEG background. Two things there are worth
+knowing if the art gets re-exported:
 
-- The elephant's cream tusk and eye highlight must stay opaque; the counters inside the **B** and
-  **P** must knock through to the background or they read as printing errors on the blue. The
-  background was found by flooding inward from the border, then the counters were isolated by
-  eroding the enclosed white regions to seeds (which erases the small eye highlight) and flooding
-  those seeds back out.
-- The lockup is **2.32:1**, not the 3.86:1 of upstream's wordmark, so `fragment_splash.xml`'s
-  ImageView went from 300×78dp to 300×129dp. Any re-export at a different ratio needs that height
-  updated to match, or `fitCenter` will letterbox it.
+- The cream tusk and eye highlight have to stay opaque, while the counters inside the B and P have
+  to knock through, or they read as printing errors against the blue. The background was found by
+  flooding inward from the border; the counters were isolated by eroding the enclosed white regions
+  to seeds, which erases the small eye highlight, then flooding those seeds back out.
+- The lockup is 2.32:1 against the 3.86:1 of upstream's wordmark, so the ImageView in
+  `fragment_splash.xml` went from 300×78dp to 300×129dp. Re-export at a different ratio and that
+  height needs updating, or `fitCenter` letterboxes it.
 
-`ic_ntf_logo` is the **Liberty crown on its own**, and it stayed a **vector** while the other
-replacements became bitmaps. Both decisions have reasons worth remembering:
+`ic_ntf_logo` is the Liberty crown on its own, and it stayed a vector while the other replacements
+became bitmaps. Both were deliberate:
 
-- The full elephant is illegible at 24dp — it reads as a blob, and knocking out the eye to fix that
-  produces something distinctly unfriendly. The crown alone survives the size and is unambiguously
-  NYC. It is one solid contour with no knockouts, so it needs no `android:fillType` — which also
-  sidesteps the fact that minSdk 23 predates that attribute (API 24) and silently falls back to
-  nonZero winding.
-- Despite the name it is not only the notification small icon. `ProfileQrCodeFragment` drops it into
-  the middle of the profile QR code, and `FancyQrCodeDrawable` draws it at `size/3` of a QR that
-  `saveCodeAsFile` renders at 1080×1080 — roughly 360px. A 24dp bitmap would visibly blur there.
+- The full elephant is illegible at 24dp. It reads as a blob, and knocking out the eye to fix that
+  produces something unfriendly. The crown survives the size and is unmistakably NYC. One solid
+  contour, no knockouts, so it needs no `android:fillType`, which also sidesteps minSdk 23 predating
+  that attribute and silently falling back to nonZero winding.
+- Despite the name it isn't only the notification icon. `ProfileQrCodeFragment` drops it into the
+  middle of the profile QR code, where `FancyQrCodeDrawable` draws it at `size/3` of a QR that
+  `saveCodeAsFile` renders at 1080×1080, so roughly 360px. A 24dp bitmap would blur badly.
   `LinkCardHolder` uses it too, at 17dp.
 
-### Identity marks — replaced
+### Replaced
 
-| File | Format | Size | Used for |
-| --- | --- | --- | --- |
-| ~~`drawable-anydpi-v26/ic_launcher_foreground.xml`~~ | bitmap wrapper | — | **Done** — wraps `@drawable/ic_launcher_elephant` |
-| ~~`drawable-anydpi-v26/ic_launcher_background.xml`~~ | shape | — | **Done** — flat `#FFFFFF`; change this one line to retheme the icon |
-| ~~`drawable-anydpi-v26/ic_launcher_monochrome.xml`~~ | bitmap wrapper | — | **Done** — wraps `@drawable/ic_launcher_elephant_mono` |
-| ~~`mastodon/src/main/res/mipmap-{m,h,x,xx,xxx}hdpi/ic_launcher.png`~~ | PNG ×5 | 48 / 72 / 96 / 144 / 192 px | **Done** — Five Borough elephant. Launcher icon, API 23–25 only |
-| ~~`mastodon/src/main/res/drawable/splash_logo.xml`~~ | bitmap wrapper | — | **Done** — 5BFP lockup; wraps `@drawable/splash_logo_5bfp` |
-| ~~`mastodon/src/main/res/drawable/ic_ntf_logo.xml`~~ | vector | 24×24dp, viewport 24×24 | **Done** — the Liberty crown alone, traced from the 5BFP mark |
-| ~~`fastlane/metadata/android/en-US/images/icon.png`~~ | PNG | 512×512 | **Done** — same elephant as the launcher icon, on white, full-bleed and fully opaque |
-| ~~`fastlane/metadata/android/en-US/images/featureGraphic.png`~~ | PNG | 1024×500 | **Done** — subway scene, cropped from `Mastodon_Image_signed2.png` |
+| File | Format | Size |
+| --- | --- | --- |
+| `drawable-anydpi-v26/ic_launcher_foreground.xml` | bitmap wrapper | wraps `ic_launcher_elephant` |
+| `drawable-anydpi-v26/ic_launcher_background.xml` | shape | flat `#FFFFFF`, one line to retheme |
+| `drawable-anydpi-v26/ic_launcher_monochrome.xml` | bitmap wrapper | wraps `ic_launcher_elephant_mono` |
+| `res/mipmap-*/ic_launcher.png` | PNG ×5 | 48–192px, API 23–25 only |
+| `res/drawable/splash_logo.xml` | bitmap wrapper | wraps `splash_logo_5bfp` |
+| `res/drawable/ic_ntf_logo.xml` | vector | 24×24dp, Liberty crown |
+| `fastlane/.../images/icon.png` | PNG | 512×512, full-bleed, opaque |
+| `fastlane/.../images/featureGraphic.png` | PNG | 1024×500, subway scene |
 
-Note that neither store image is currently uploaded by CI: both Fastfile lanes pass
-`skip_upload_images: true`, and both workflows set `SUPPLY_SKIP_UPLOAD_METADATA: true`. Until that
-changes, these files are the source of truth in git but the live listing has to be set in the Play
-Console by hand.
+Neither store image is uploaded by CI: both Fastfile lanes pass `skip_upload_images: true` and both
+workflows set `SUPPLY_SKIP_UPLOAD_METADATA: true`. Until that changes they're the source of truth in
+git, but the live listing gets set by hand.
 
-### Still upstream's — Mastodon mascot illustrations
+### Still upstream's
 
-These are background illustrations rather than identity marks, so they are not license-blocking,
-but they are recognisably Mastodon's mascot and are the most visible remaining giveaway — the three
-elephants on the splash screen are these.
+Background illustrations rather than identity marks, so not license-blocking, but recognisably
+Mastodon's mascot and the most visible thing left. The three elephants on the splash screen are
+these.
 
-The splash art is five parallax layers; the layout scales them to a 360×640dp stage, so keep each
-one's aspect ratio or the parallax offsets in `fragment_splash.xml` will need retuning.
+Five parallax layers, scaled onto a 360×640dp stage. Keep each aspect ratio or the offsets in
+`fragment_splash.xml` need retuning.
 
 | File | Size (px) | Drawn at | Layer |
 | --- | --- | --- | --- |
-| `mastodon/src/main/res/drawable-nodpi/splash_art_layer0.webp` | 870×1137 | 414×541dp | Clouds |
-| `mastodon/src/main/res/drawable-nodpi/splash_art_layer4.webp` | 656×195 | 245.64×72.65dp | Elephant on a paper plane |
-| `mastodon/src/main/res/drawable-nodpi/splash_art_layer1.webp` | 443×518 | 150.84×176.44dp | Right hill |
-| `mastodon/src/main/res/drawable-nodpi/splash_art_layer2.webp` | 599×466 | 197.2×153.61dp | Left hill |
-| `mastodon/src/main/res/drawable-nodpi/splash_art_layer3.webp` | 870×756 | 400×346dp | Centre hill |
-| `mastodon/src/main/res/drawable/empty_state_elephant_light.xml` | viewport 400×400 | 200×200dp | Empty-list state, light theme |
-| `mastodon/src/main/res/drawable/empty_state_elephant_dark.xml` | viewport 400×400 | 200×200dp | Empty-list state, dark theme |
+| `drawable-nodpi/splash_art_layer0.webp` | 870×1137 | 414×541dp | Clouds, 30% opacity |
+| `drawable-nodpi/splash_art_layer4.webp` | 656×195 | 245.64×72.65dp | Elephant on a paper plane, 30% opacity |
+| `drawable-nodpi/splash_art_layer1.webp` | 443×518 | 150.84×176.44dp | Right elephant |
+| `drawable-nodpi/splash_art_layer2.webp` | 599×466 | 197.2×153.61dp | Left elephant |
+| `drawable-nodpi/splash_art_layer3.webp` | 870×756 | 400×346dp | Centre elephants |
+| `drawable/empty_state_elephant_light.xml` | viewport 400×400 | 200×200dp | Empty list, light |
+| `drawable/empty_state_elephant_dark.xml` | viewport 400×400 | 200×200dp | Empty list, dark |
 
-Splash background fills are hardcoded in `fragment_splash.xml` as `#50D5ED` (top) and `#478E6A`
-(bottom); change those alongside the art if the new palette doesn't match.
+Several layers start off-canvas on purpose, so nothing shows a hard edge during the parallax motion.
+Background fills are hardcoded in `fragment_splash.xml` as `#50D5ED` on top and `#478E6A` below;
+change those with the art if the palette doesn't match.
 
 ### Optional
 
-- `fastlane/metadata/android/en-US/images/phoneScreenshots/1–8.png` — store screenshots, still show
-  upstream branding and the old splash.
-- `mastodon/src/main/res/drawable-nodpi/donation_successful_art.webp` — already unreachable, since
-  upstream only offers donations to `mastodon.social` / `mastodon.online` accounts.
+- `fastlane/metadata/android/en-US/images/phoneScreenshots/1–8.png` still show upstream branding.
+- `drawable-nodpi/donation_successful_art.webp` is already unreachable, since upstream only offers
+  donations to `mastodon.social` and `mastodon.online` accounts.
 
-Not branded, no action needed: `ic_shortcut_compose` / `ic_shortcut_explore` (generic glyphs),
+Not branded, nothing to do: `ic_shortcut_compose` and `ic_shortcut_explore` (generic glyphs),
 `ic_notification_fallback` (a black dot), `poof.png`.
 
 ## Server-side pieces
 
 `deploy/` holds what belongs on the masto.nyc side rather than in the app. `assetlinks.json` is the
-one that matters: without it Android cannot verify this app's claim on `https://masto.nyc/...`, so
-the `autoVerify="true"` profile-link filter in the manifest silently does nothing.
+one that matters: without it Android can't verify this app's claim on `https://masto.nyc/...`, and
+the `autoVerify="true"` filter in the manifest quietly does nothing.
 
 `deploy/cloudflare/` is a Worker that serves it, deployed by
-`.github/workflows/deploy-assetlinks.yml` on every published release. Two things there are load-
-bearing:
+`.github/workflows/deploy-assetlinks.yml` on every published release. Two things there are
+load-bearing:
 
-- The Worker route is scoped to the exact path `masto.nyc/.well-known/assetlinks.json`. Widening it
-  to `/.well-known/*` would intercept Mastodon's webfinger, nodeinfo and host-meta endpoints and
-  break federation.
-- Fingerprints are derived from the release keystore at deploy time, never committed. A stale
-  fingerprint fails silently — links simply start opening in the browser again with no error
-  anywhere — so `deploy/cloudflare/src/assetlinks.json` is gitignored.
+- The route is scoped to exactly `masto.nyc/.well-known/assetlinks.json`. Widening it to
+  `/.well-known/*` would swallow Mastodon's webfinger, nodeinfo and host-meta endpoints and break
+  federation.
+- Fingerprints come from the release keystore at deploy time and are never committed. A stale one
+  fails silently, with links just going back to opening in the browser, so
+  `deploy/cloudflare/src/assetlinks.json` is gitignored.
 
-See `deploy/README.md`, including the Play App Signing trap: with App Signing enabled the installed
-APK carries *Google's* signature, not the upload key's, so `PLAY_APP_SIGNING_SHA256` must be set or
-verification fails for Play installs while passing for CI-built APKs.
+`deploy/README.md` has the rest, including the Play App Signing trap: with App Signing on, the
+installed APK carries Google's signature rather than the upload key's, so `PLAY_APP_SIGNING_SHA256`
+has to be set or verification fails for Play installs while passing for CI-built APKs.
 
 ## Deliberately not changed: "Open email app"
 
-On the signup confirmation screen this button uses
-`Intent.makeMainSelectorActivity(ACTION_MAIN, CATEGORY_APP_EMAIL)`. That is the documented Android
-intent for the job and there is no better platform API — Android has no "open the inbox" contract
-beyond it, and `mailto:` is standardised for *composing*, not for opening a mailbox.
+The button on the signup confirmation screen uses
+`Intent.makeMainSelectorActivity(ACTION_MAIN, CATEGORY_APP_EMAIL)`. That's the documented Android
+intent for the job and there's no better API. Android has no "open the inbox" contract beyond it,
+and `mailto:` is for composing, not opening a mailbox.
 
-It was briefly replaced here with a `mailto:`-resolution heuristic, then reverted. On a test device
-it opened Tasker, but that needed three unusual conditions at once: no Gmail installed (Gmail does
-declare the category), a mail app that declares only `mailto:`, and Tasker declaring
-`CATEGORY_APP_EMAIL`. Carrying a heuristic in an upstream file to paper over that is a bad trade
-against merge cost, and the heuristic has its own failure mode — Android 11+ package visibility
-hides any mail app that does not also declare `http`/`https` filters, so it needs extra `<queries>`
-entries and *still* surfaces false positives like a pharmacy app that registers `mailto:`.
+A `mailto:`-resolution heuristic was tried here and reverted. On a test device the button opened
+Tasker, but that took three unusual things at once: no Gmail installed (Gmail does declare the
+category), a mail app declaring only `mailto:`, and Tasker declaring `CATEGORY_APP_EMAIL`. Carrying
+a heuristic in an upstream file to paper over that is a bad trade against merge cost, and the
+heuristic has its own failure mode: Android 11+ package visibility hides any mail app that doesn't
+also declare `http`/`https` filters, so it needs extra `<queries>` entries and still turns up false
+positives like a pharmacy app that registers `mailto:`.
 
-If a user hits this, the fix is on their device: set a default mail app, or ask the mail app's
-vendor to declare `CATEGORY_APP_EMAIL`.
+If someone hits this, the fix is on their device: set a default mail app, or ask the vendor to
+declare `CATEGORY_APP_EMAIL`.
 
 ## Known gaps
 
 - **Non-English branding.** `app_name` is `translatable="false"` and lives only in `values/`, so the
-  app name rebrands in every locale. But a handful of translated strings in `values-*/strings.xml`
-  still say "Mastodon" in prose (e.g. `settings_contribute`). Overriding those would mean editing 60+
-  Crowdin-managed locale files, which is exactly the merge pain this fork is structured to avoid.
-- **Donation prompts** are already inert: upstream only shows them for `mastodon.social` and
-  `mastodon.online` accounts, so no change was needed.
+  app name rebrands everywhere. But some translated strings in `values-*/strings.xml` still say
+  "Mastodon" in prose. Overriding those means editing 60+ Crowdin-managed files, which is the exact
+  merge pain this structure exists to avoid.
+- **Donation prompts** are already inert, since upstream only shows them to `mastodon.social` and
+  `mastodon.online` accounts.
