@@ -79,9 +79,10 @@ jobs:
           # accessed for 7 days and the cron is weekly, so the cache would survive only by luck.
           # In the repo it is durable, reviewable in the PR that created it, and arrives on main
           # through the same gate as everything else.
-          mkdir -p .git/rr-cache
-          if [ -d .rerere ]; then cp -a .rerere/. .git/rr-cache/; fi
-          echo "loaded $(find .git/rr-cache -mindepth 1 -maxdepth 1 -type d | wc -l) recorded resolutions"
+          RR=$(git rev-parse --git-path rr-cache)
+          mkdir -p "$RR"
+          if [ -d .rerere ]; then cp -a .rerere/. "$RR"/; fi
+          echo "loaded $(find "$RR" -mindepth 1 -maxdepth 1 -type d | wc -l) recorded resolutions"
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Pick the upstream tag
@@ -236,7 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .rerere
-          cp -a .git/rr-cache/. .rerere/ 2>/dev/null || true
+          cp -a "$(git rev-parse --git-path rr-cache)"/. .rerere/ 2>/dev/null || true
           if ! git diff --quiet -- .rerere || [ -n "$(git status --porcelain .rerere)" ]; then
             git add .rerere
             git commit -m "Record conflict resolutions for ${{ steps.pick.outputs.tag }}"
