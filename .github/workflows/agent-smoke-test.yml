@@ -1,0 +1,96 @@
+name: Agent smoke test
+
+# Proves dsh actually works before a real conflict depends on it.
+#
+# The agent path cannot be rehearsed against a real upstream tag: merging a tag that is already an
+# ancestor of main never conflicts, and there is no unmerged upstream tag to try until upstream
+# releases again. So the first genuine exercise of dsh would otherwise be an unattended 06:17 cron
+# run on a week when something has already gone wrong.
+#
+# This runs dsh on a trivial task instead. It verifies the install, the profile composition, the API
+# key, the base URL and the model id, which is everything except resolution quality. It costs a
+# fraction of a cent.
+#
+# It matters most for the model id. dsh falls back to its own default model when the provider config
+# is wrong, silently, so a misconfigured model looks identical to a working one until the bill
+# arrives.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install DeepSeek Harness
+        env:
+          DSH_VERSION: ${{ vars.DSH_VERSION || '0.5.3' }}
+        run: |
+          set -euo pipefail
+          npm i -g "@deepseek-ai/dsh@${DSH_VERSION}"
+          dsh --version
+
+      - name: Compose the profile
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-v4-flash' }}
+          DSH_HOME: ${{ github.workspace }}/.dsh-home
+        run: |
+          set -euo pipefail
+          mkdir -p "$DSH_HOME/profiles/sync"
+          cp .dsh/profile/package.json .dsh/profile/cordis.patch.yml "$DSH_HOME/profiles/sync/"
+          envsubst < .dsh/profile/settings.yaml > "$DSH_HOME/settings.yaml"
+          printf 'LLM_API_KEY=%s\n' "$LLM_API_KEY" > "$DSH_HOME/.env"
+          chmod 600 "$DSH_HOME/.env"
+          echo "provider: $LLM_BASE_URL"
+          echo "model:    $LLM_MODEL"
+          echo "--- composed settings.yaml, key redacted ---"
+          grep -v -i 'key' "$DSH_HOME/settings.yaml" || true
+
+      - name: Show what dsh actually composed
+        env:
+          DSH_HOME: ${{ github.workspace }}/.dsh-home
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          # If the provider block is not in this output, dsh is ignoring our config and will fall
+          # back to its default model. That is the failure this whole workflow exists to catch.
+          dsh --profile sync --dump-config 2>&1 | grep -iE 'provider|model|baseurl|deepseek' | head -30 \
+            || echo "::warning::Could not find provider or model in the composed config. Check settings.yaml against the dsh version in use."
+
+      - name: Ask the model something trivial
+        id: ask
+        timeout-minutes: 10
+        env:
+          DSH_HOME: ${{ github.workspace }}/.dsh-home
+          DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
+          DSH_TELEMETRY_MODE: local
+          DSH_TOOLS_MODE: native
+        run: |
+          set -euo pipefail
+          dsh --profile sync "Reply with exactly the word SMOKETEST_OK and nothing else. Do not use any tools." \
+            | tee /tmp/smoke.txt
+          grep -q "SMOKETEST_OK" /tmp/smoke.txt \
+            || { echo "::error::dsh ran but did not return the expected reply. Check the model and provider config."; exit 1; }
+          echo "dsh is reachable, authenticated, and answering."
+
+      - name: Report where sessions landed
+        if: always()
+        env:
+          DSH_HOME: ${{ github.workspace }}/.dsh-home
+        run: |
+          # The sync workflow archives $DSH_HOME/sessions and $DSH_HOME/logs as its audit trail, but
+          # those paths were inferred from the docs rather than observed. This says what is really
+          # there, so the artifact paths can be corrected if they are wrong.
+          echo "contents of DSH_HOME:"
+          find "$DSH_HOME" -maxdepth 2 -mindepth 1 | sed 's/^/  /' | head -40
