@@ -55,9 +55,14 @@ says why.
 `dsh` is a developer preview. Its CLI reference documents `--profile`, `--patch` and the config
 dump flags, but not model selection, a turn budget, or a trajectory-log path. So:
 
-- The model is set in `cordis.patch.yml` in the shape the plugin docs imply. It is unverified. If
-  the key is wrong, dsh falls back to its default model silently, which changes cost and quality
-  without erroring. Run `dsh --profile sync --dump-config` after any version bump and check.
+- Provider and model are set in `$DSH_HOME/settings.yaml`, generated from `.dsh/profile/settings.yaml`.
+  A `cordis.patch.yml` used to sit alongside it carrying sandbox and tool-deny settings; dsh
+  rejected it, because a patch overlay has to be a top-level YAML array of loader patch entries and
+  it was written as a mapping. It carried nothing load-bearing, so it was removed rather than
+  guessed at again. The real containment is the App token, which cannot push to `main`.
+- Whether dsh honours the `settings.yaml` provider block is still unconfirmed. It falls back to its
+  own default model silently when the config is wrong, so run the agent smoke test after any
+  version bump and check that the dump-config step actually shows the provider.
 - There is no turn budget. The workflow bounds the run with `timeout-minutes: 45`, which limits
   wall clock and therefore spend, but not the number of turns.
 - The session artifact paths (`$DSH_HOME/sessions`, `$DSH_HOME/logs`) are inferred. The upload step

@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$DSH_HOME/profiles/sync"
-          cp .dsh/profile/package.json .dsh/profile/cordis.patch.yml "$DSH_HOME/profiles/sync/"
+          cp .dsh/profile/package.json "$DSH_HOME/profiles/sync/"
           envsubst < .dsh/profile/settings.yaml > "$DSH_HOME/settings.yaml"
           printf 'LLM_API_KEY=%s\n' "$LLM_API_KEY" > "$DSH_HOME/.env"
           chmod 600 "$DSH_HOME/.env"
