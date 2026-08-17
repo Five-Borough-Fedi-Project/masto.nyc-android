@@ -1,32 +1,19 @@
 # Patch layer for the upstream-sync profile.
 #
-# Two caveats, both real and both worth knowing before you trust this file:
+# Provider and model live in settings.yaml, which is where dsh actually reads them from. An earlier
+# version of this file carried a `model:` block; that key was a guess and dsh ignored it, which
+# would have meant silently running on the default model.
 #
-# 1. dsh is a developer preview and the CLI reference does not document the key for model
-#    selection, a turn budget, or a trajectory-log path. The model block below is the shape the
-#    plugin docs imply, but it is unverified. Run `dsh --profile sync --dump-config` after any
-#    version bump and confirm the composed tree still contains these values. If the model key is
-#    wrong, dsh will quietly use its default model, which is a silent cost and quality change
-#    rather than an error.
-#
-# 2. There is no documented turn budget. The workflow enforces a wall-clock limit with
-#    timeout-minutes instead, which bounds spend but not the number of turns.
-model:
-  provider: deepseek
-  # Cheap, 1M context, non-reasoning. The whole job is "read a conflict, apply a documented
-  # policy", which does not need a reasoning model.
-  name: deepseek-v4-flash
-  apiKeyEnv: DEEPSEEK_API_KEY
+# There is still no documented turn budget. The workflow bounds spend with timeout-minutes instead,
+# which limits wall clock rather than turns.
 
 sandbox:
-  # The agent needs a real shell: git, gradle, gh. It runs on a throwaway runner with a
-  # branch-scoped token, which is the actual containment boundary here, not the sandbox setting.
+  # The agent needs a real shell for git, gradle and gh. Containment comes from the runner being
+  # disposable and the token being unable to push to main, not from this setting.
   mode: workspace
 
 tools:
   deny:
-    # Belt and braces. The token cannot push to main anyway (see the ruleset in SETUP.md), but
-    # there is no reason for the agent to try.
     - "git push --force"
     - "git push origin main"
     - "gh pr merge"
