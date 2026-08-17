@@ -215,9 +215,8 @@ jobs:
         env:
           # The inference key is scoped to this step alone. Nothing else in the workflow, and
           # nothing in ci.yml, can read it.
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
-          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-v4-flash' }}
+          DEEPSEEK_API_KEY: ${{ secrets.LLM_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
           DSH_HOME: ${{ github.workspace }}/.dsh-home
           DSH_TOOLS_MODE: native
           GH_TOKEN: ${{ steps.app.outputs.token }}
@@ -228,10 +227,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$DSH_HOME/profiles/sync"
           cp .dsh/profile/package.json "$DSH_HOME/profiles/sync/"
-          envsubst < .dsh/profile/settings.yaml > "$DSH_HOME/settings.yaml"
-          printf 'LLM_API_KEY=%s\n' "$LLM_API_KEY" > "$DSH_HOME/.env"
-          chmod 600 "$DSH_HOME/.env"
-          echo "provider: $LLM_BASE_URL  model: $LLM_MODEL"
+          echo "provider route: deepseek-official at $DEEPSEEK_BASE_URL"
 
           # Stable prefix first, run-specific detail last. deepseek-v4-flash bills cached input at
           # $0.0028/M against $0.14/M for a miss, so keeping FORK.md and the task prompt in the

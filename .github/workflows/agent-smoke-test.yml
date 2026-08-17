@@ -41,21 +41,14 @@ jobs:
 
       - name: Compose the profile
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
-          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-v4-flash' }}
+          DEEPSEEK_API_KEY: ${{ secrets.LLM_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
           DSH_HOME: ${{ github.workspace }}/.dsh-home
         run: |
           set -euo pipefail
           mkdir -p "$DSH_HOME/profiles/sync"
           cp .dsh/profile/package.json "$DSH_HOME/profiles/sync/"
-          envsubst < .dsh/profile/settings.yaml > "$DSH_HOME/settings.yaml"
-          printf 'LLM_API_KEY=%s\n' "$LLM_API_KEY" > "$DSH_HOME/.env"
-          chmod 600 "$DSH_HOME/.env"
-          echo "provider: $LLM_BASE_URL"
-          echo "model:    $LLM_MODEL"
-          echo "--- composed settings.yaml, key redacted ---"
-          grep -v -i 'key' "$DSH_HOME/settings.yaml" || true
+          echo "provider route: deepseek-official at $DEEPSEEK_BASE_URL"
 
       - name: Show what dsh actually composed
         env:
@@ -92,3 +85,10 @@ jobs:
           # there, so the artifact paths can be corrected if they are wrong.
           echo "contents of DSH_HOME:"
           find "$DSH_HOME" -maxdepth 2 -mindepth 1 | sed 's/^/  /' | head -40
+          echo
+          # Which model actually answered. dsh selects a default for the deepseek route and there
+          # is no documented flag to pin one, so this is the only way to know what we are paying
+          # for. If it is not the intended model, that is a real finding, not a cosmetic one.
+          echo "model references in the session record:"
+          grep -rhoiE '"model"\s*:\s*"[^"]+"|deepseek-[a-z0-9.-]+' "$DSH_HOME/sessions" 2>/dev/null \
+            | sort -u | head -10 || echo "  (none found)"
