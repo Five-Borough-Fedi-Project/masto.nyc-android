@@ -65,4 +65,6 @@ dump flags, but not model selection, a turn budget, or a trajectory-log path. So
   rather than a failed run.
 
 The dsh version is pinned through the `DSH_VERSION` repo variable so a preview release cannot change
-behaviour underneath you.
+behaviour underneath you. It is pre-1.0 and publishes release candidates rather than stable
+versions, currently `0.1.0-rc.6`. Check npm before bumping, and re-run the agent smoke test after,
+because a version bump can move the config schema and a wrong provider block fails silently.
