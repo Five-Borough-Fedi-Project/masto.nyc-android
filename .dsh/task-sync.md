@@ -14,7 +14,8 @@ resolution you make has to keep those changes intact.
    top of it.
 3. Run `./gradlew assembleDebug` and get it green. Write `sdk.dir=$ANDROID_SDK_ROOT` into
    `local.properties` first if it is missing.
-4. Commit the merge, push the branch, and open a pull request into `main`.
+4. Commit the merge. Do not push and do not open a pull request; the workflow does both
+   after you finish, and it writes a PR body that includes your explanation below.
 
 ## Rules
 
@@ -39,13 +40,15 @@ Never widen the change. If resolving a conflict seems to need a refactor, an add
 new file outside `mastodon/src/main/java/org/joinmastodon/android/fork/`, stop and say so in the PR
 body instead of doing it.
 
-Do not merge the PR, create tags or releases, touch signing config, or push to `main`. You do not
-have permission for any of it and attempting it will fail the run.
+Do not push, merge, create tags or releases, touch signing config, or push to `main`. The workflow
+handles pushing. You do not have permission for the rest and attempting it will fail the run.
 
-If you cannot get the build green, push what you have anyway and say plainly in the PR body what is
-still broken and what you tried. A PR that honestly reports a failure is more useful than no PR.
+If you cannot get the build green, commit what you have anyway and say plainly what is still broken
+and what you tried. An honest report of a failure is more useful than nothing.
 
-## The pull request body
+## Your final message
+
+This is quoted verbatim into the pull request body.
 
 Write it for a reviewer who has not seen the conflict. For each file you resolved, say what upstream
 changed, what we had changed, and how you combined them. Be specific about anything you were unsure

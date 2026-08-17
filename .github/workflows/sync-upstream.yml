@@ -94,12 +94,19 @@ jobs:
           git remote add upstream "$UPSTREAM" 2>/dev/null || git remote set-url upstream "$UPSTREAM"
           git fetch --tags --quiet upstream
 
-          TAG="${WANT:-$(git tag -l 'v*' --sort=-v:refname | head -1)}"
+          # Query the remote directly. Our own release tags (v0.0.1 and friends) live in the same
+          # local tag namespace after fetching upstream, so `git tag -l` would happily return one of
+          # ours as "the newest upstream tag" the moment our version number overtakes theirs.
+          upstream_tags() {
+            git ls-remote --tags upstream 'refs/tags/v*' | grep -v '\^{}' | sed 's|.*refs/tags/||' | sort -V
+          }
+          TAG="${WANT:-$(upstream_tags | tail -1)}"
           [ -n "$TAG" ] || { echo "::error::No upstream tag found"; exit 1; }
           git rev-parse -q --verify "refs/tags/$TAG^{commit}" >/dev/null \
             || { echo "::error::Tag $TAG does not exist upstream"; exit 1; }
 
-          PREV=$(git tag -l 'v*' --sort=-v:refname | awk -v t="$TAG" 'p&&$0!=t{print;exit} $0==t{p=1}')
+          PREV=$(upstream_tags | grep -B1 -x "$TAG" | head -1)
+          [ "$PREV" = "$TAG" ] && PREV=""
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "prev=$PREV" >> "$GITHUB_OUTPUT"
           echo "branch=sync/upstream-$TAG" >> "$GITHUB_OUTPUT"
@@ -135,7 +142,7 @@ jobs:
         id: build
         if: steps.pick.outputs.skip == 'false' && steps.merge.outputs.conflicted == 'false'
         continue-on-error: true
-        run: ./gradlew assembleDebug --console=plain
+        run: ./gradlew assembleDebug --console=plain 2>&1 | tee /tmp/build.log
 
       # Everything the agent needs, assembled deterministically and for free. Handing dsh a focused
       # brief instead of "here is a repo, work it out" cuts input tokens by an order of magnitude
@@ -203,6 +210,7 @@ jobs:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           TAG: ${{ steps.pick.outputs.tag }}
           BRANCH: ${{ steps.pick.outputs.branch }}
+          REASON: ${{ steps.merge.outputs.conflicted == 'true' && 'the merge conflicted' || 'the merge was clean but the build failed' }}
         run: |
           set -euo pipefail
           mkdir -p "$DSH_HOME/profiles/sync"
@@ -277,10 +285,17 @@ jobs:
             --title "Upstream sync failed: $TAG" --label "sync-failure" \
             --body "$(printf 'Syncing `%s` did not produce a PR.\n\nRun: %s/%s/actions/runs/%s\n\nIf the agent ran, its session is attached to that run as an artifact.\n\nTo retry with a different model, assign this issue to the Copilot coding agent. To fix it by hand, resolve the merge locally with `rerere.enabled` on, then commit `.git/rr-cache` into `.rerere/` so the resolution replays next week.\n' "$TAG" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
 
+  # GitHub disables scheduled workflows on repos idle for 60 days. Re-enabling the workflow counts
+  # as activity. Done with a plain API call rather than a third-party action, so there is no
+  # unpinned third party in the critical path of the thing that keeps the cron alive.
   keepalive:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
     permissions:
       actions: write
     steps:
-      - uses: liskin/gh-workflow-keepalive@v1
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/sync-upstream.yml/enable" \
+            --silent || echo "::warning::keepalive call failed; check the cron has not been disabled"

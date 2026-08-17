@@ -50,6 +50,8 @@ jobs:
           BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           set -euo pipefail
+          # checkout fetched the PR branch; main is not guaranteed to be present.
+          git fetch -q origin main
           N=$(git log --oneline origin/main.."$BRANCH" --grep="agent repair attempt" | wc -l)
           echo "count=$N" >> "$GITHUB_OUTPUT"
           if [ "$N" -ge "$MAX_ATTEMPTS" ]; then
