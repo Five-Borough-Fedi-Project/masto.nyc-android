@@ -1,26 +1,26 @@
 # Masto NYC for Android
 
-A fork of the [official Mastodon Android app](https://github.com/mastodon/mastodon-android), rebranded and locked to the [masto.nyc](https://masto.nyc) server.
+A fork of the [official Mastodon Android app](https://github.com/mastodon/mastodon-android), rebranded for [masto.nyc](https://masto.nyc) and locked to that server.
 
-This app is not affiliated with or endorsed by the Mastodon non-profit organisation.
+Not affiliated with or endorsed by the Mastodon non-profit.
 
-## Why
+Having to pick a server before you can sign up puts a lot of people off. This app skips that step. There's no server picker; signup and login both go straight to masto.nyc. You still get the whole fediverse once you're in.
 
-Mastodon's federated onboarding — "pick a server" before you can even sign up — is a well-known point of confusion for new users. This fork removes that step entirely: the app talks to one server, masto.nyc, and nothing else. You still get the whole fediverse once you're in; you just don't have to understand it to get started.
+## What's different from upstream
 
-## Differences from upstream
-
-- Signup and login are locked to `masto.nyc`. There is no server picker and no server catalog.
-- Branding is "Masto NYC", with Five Borough Fedi Project artwork for the launcher icon, splash logo and notification icon.
+- Signup and login only work with masto.nyc. The server picker and catalog are gone.
+- Branded as Masto NYC, with Five Borough Fedi Project artwork for the launcher icon, splash logo and notification icon.
 - Application ID is `nyc.masto.android`, so it installs alongside the official app.
 
-See [FORK.md](./FORK.md) for the full inventory of changed files and the conventions that keep upstream merges cheap.
+[FORK.md](./FORK.md) lists every changed file and the conventions that keep upstream merges cheap.
 
 ## Building
 
-Requires **JDK 21** and **Android SDK Platform 37.0**.
+You need JDK 21 and Android SDK Platform 37.0.
 
-Two things that will otherwise cost you an afternoon. Do not use a newer JDK — the Gradle wrapper pulls Gradle 8.13, which predates JDK 24/25 support; 21 is also what CI pins. And note the `.0` on the platform: Google no longer publishes a bare `android-37`, so `sdkmanager "platforms;android-37"` fails and takes the rest of its arguments down with it.
+Don't reach for a newer JDK. The Gradle wrapper pulls Gradle 8.13, which predates JDK 24 and 25, and CI pins 21 as well.
+
+Mind the `.0` on the platform. Google stopped publishing a bare `android-37`, so `sdkmanager "platforms;android-37"` fails, and it takes the rest of its arguments down with it.
 
 ```shell
 echo "sdk.dir=$HOME/Android/Sdk" > local.properties
@@ -30,44 +30,36 @@ echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 ./gradlew assembleDebug
 ```
 
-Build-Tools are downloaded by AGP itself once the SDK licences are accepted, so there's no version to pin. See [FORK.md](./FORK.md#toolchain) for the full toolchain notes.
+AGP downloads Build-Tools itself once you've accepted the SDK licences, so there's nothing to pin. [FORK.md](./FORK.md#toolchain) has the rest.
 
 ## Releasing
 
-**Tag releases `vX.Y.Z`. Exactly three numbers, `v` prefix, no suffix.** That is the whole process — publish a GitHub release with a conforming tag and everything else is automatic.
+Tag it `vX.Y.Z` and publish. That's the whole process.
 
-`v1.2.3` ✅ · `v0.1-alpha` ❌ · `v1.2` ❌ · `1.2.3` ❌
+Three numbers, a `v` in front, nothing after. `v1.2.3` works; `v0.1-alpha`, `v1.2` and `1.2.3` don't, and the release workflow rejects them before it builds anything.
 
-This is enforced, not a convention: the release workflow validates the tag before doing anything and fails in seconds if it doesn't conform.
+The reason is the in-app updater. It parses versions with `/v?(\d+)\.(\d+)(?:\.(\d+))?/`, which throws away anything past the third number, so it reads `v1.0.0-beta` and `v1.0.0` as the same version and never offers the update. Nothing errors out. Users just quietly stop getting updates, which is why the check exists.
 
-**Why suffixes are banned.** The in-app updater matches `/v?(\d+)\.(\d+)(?:\.(\d+))?/` and ignores everything after the third number, so `v1.0.0-beta` and `v1.0.0` compare as **equal** — users would simply never be offered the update. It fails silently, which is why the check exists.
+Publishing a release will:
 
-Publishing a release automatically:
+- turn the tag into a `versionName` (`1.2.3`) and `versionCode` (`1002003`)
+- build a signed APK and attach it as `masto-nyc-vX.Y.Z.apk`
+- push `assetlinks.json` to Cloudflare with the current signing fingerprint
 
-- derives `versionName` (`1.2.3`) and `versionCode` (`1002003`) from the tag
-- builds a signed APK and attaches it as `masto-nyc-vX.Y.Z.apk`
-- publishes `assetlinks.json` to Cloudflare with the current signing fingerprint
+Bump the patch for your own changes between upstream merges. Bump the minor when you pull in an upstream release or ship a feature. Major is your call.
 
-### Which number to bump
+Our version numbers have nothing to do with upstream's, and it isn't worth trying to encode theirs into ours, since the updater ignores anything past the third number anyway. We do still track which upstream release we're sitting on: this fork never edits `build.gradle`, so the `versionName` in there stays upstream's, and CI reads it at build time.
 
-| Bump | When |
-| --- | --- |
-| patch | your own changes between upstream merges — fixes, strings, artwork |
-| minor | you merged an upstream release, or shipped a real feature |
-| major | your call |
-
-Versioning is **independent of upstream's**. Don't try to encode their version into yours — anything past the third number is invisible to the updater. Upstream's version is still recorded automatically: `build.gradle` is never edited by this fork, so its `versionName` remains an accurate note of which upstream release the fork sits on, and CI reads it at build time.
-
-**Never re-tag a released version.** Bump the patch instead. `versionCode` derives from the tag, Play rejects duplicates, and the updater caches by version.
+Don't re-tag a version you've already released; bump the patch instead. `versionCode` comes from the tag, Play rejects duplicates, and the updater caches by version.
 
 ## Contributing
 
-Bug reports and pull requests specific to this fork are welcome here. Anything that isn't masto.nyc-specific should go upstream to [mastodon/mastodon-android](https://github.com/mastodon/mastodon-android) instead, so that it benefits everyone and flows back into this fork on the next merge.
+Bug reports and pull requests for fork-specific things are welcome here. Anything that isn't masto.nyc-specific is better sent to [mastodon/mastodon-android](https://github.com/mastodon/mastodon-android), where everyone benefits and it'll reach this fork on the next merge.
 
-Translations are inherited from upstream via Crowdin. Please do not create pull requests that modify `strings.xml` files for languages other than English.
+Translations come from upstream via Crowdin. Please don't send pull requests that change `strings.xml` for languages other than English.
 
 ## License
 
-This project is released under the [GPL-3 License](./LICENSE).
+[GPL-3](./LICENSE).
 
-The Mastodon name and logo are trademarks of the Mastodon non-profit organisation. This fork uses a distinct name, and the launcher icon, splash logo, notification icon and store images are all Five Borough Fedi Project artwork. The splash background illustration and the empty-state art are still upstream's; see [FORK.md](./FORK.md#artwork) for what remains.
+The Mastodon name and logo are trademarks of the Mastodon non-profit. This fork uses its own name, and the launcher icon, splash logo, notification icon and store images are Five Borough Fedi Project artwork. The splash background and empty-state illustrations are still upstream's; [FORK.md](./FORK.md#artwork) tracks what's left.
