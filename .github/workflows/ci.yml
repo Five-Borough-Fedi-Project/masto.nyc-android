@@ -61,8 +61,11 @@ jobs:
               fail=1
             fi
           }
-          check mastodon/build.gradle 'applicationId "nyc.masto.android"'
-          check mastodon/build.gradle 'compileSdkMinor'
+          # applicationId and compileSdkMinor live in fork.gradle, not build.gradle. build.gradle
+          # carries only the apply line, which is the piece an upstream merge could drop.
+          check mastodon/build.gradle "apply from: 'fork.gradle'"
+          check mastodon/fork.gradle 'applicationId "nyc.masto.android"'
+          check mastodon/fork.gradle 'compileSdkMinor'
           check mastodon/src/main/res/values/strings.xml '>Masto NYC<'
           check mastodon/src/main/java/org/joinmastodon/android/fork/ForkConfig.java 'masto.nyc'
           check mastodon/src/main/java/org/joinmastodon/android/api/MastodonAPIController.java 'ForkConfig.USER_AGENT_PRODUCT'
