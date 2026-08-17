@@ -162,10 +162,15 @@ jobs:
               echo "## Files in conflict"
               sed 's/^/- /' /tmp/conflicts.txt
               echo
-              echo "## What upstream changed in those files between $PREV and $TAG"
+              if [ -z "$PREV" ]; then
+                echo "## Upstream history"
+                echo "No previous upstream tag was resolved, so no per-file history is included."
+              else
+                echo "## What upstream changed in those files between $PREV and $TAG"
+              fi
               while read -r f; do
                 echo "### $f"
-                git log --oneline "$PREV..$TAG" -- "$f" | sed 's/^/    /' || true
+                [ -n "$PREV" ] && git log --oneline "$PREV..$TAG" -- "$f" | sed 's/^/    /' || true
                 echo
               done < /tmp/conflicts.txt
             else

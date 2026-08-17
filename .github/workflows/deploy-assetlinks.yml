@@ -35,13 +35,22 @@ jobs:
           fileName: "release.jks"
           encodedString: ${{ secrets.KEYSTORE_FILE }}
 
-      - name: Read applicationId from build.gradle
+      - name: Read applicationId
         id: appid
         run: |
           set -euo pipefail
-          APP_ID=$(grep -oP 'applicationId\s+"\K[^"]+' mastodon/build.gradle)
+          # fork.gradle, not build.gradle. build.gradle deliberately still carries upstream's
+          # org.joinmastodon.android so it stays merge-clean, which means reading it here would
+          # publish an assetlinks.json for the wrong package. That failure is silent: the deploy
+          # succeeds, the verify step checks against the same wrong value and passes, and App Links
+          # just quietly stop verifying on every device.
+          APP_ID=$(grep -oP 'applicationId\s+"\K[^"]+' mastodon/fork.gradle)
           if [ -z "$APP_ID" ]; then
-            echo "::error::Could not read applicationId from mastodon/build.gradle"
+            echo "::error::Could not read applicationId from mastodon/fork.gradle"
+            exit 1
+          fi
+          if [ "$APP_ID" = "org.joinmastodon.android" ]; then
+            echo "::error::applicationId is upstream's. Refusing to publish assetlinks for it."
             exit 1
           fi
           echo "Derived applicationId: $APP_ID"
