@@ -280,16 +280,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      # failure() covers a hard failure anywhere earlier, including steps that run before `pick`
+      # and therefore leave its outputs empty. Without it, a failure early enough in the job
+      # produced no issue at all, which is the silent skip this is supposed to prevent.
       - name: Open an issue if this did not finish
-        if: steps.pick.outputs.skip == 'false' && steps.pr.outcome != 'success'
+        if: failure() || (steps.pick.outputs.skip == 'false' && steps.pr.outcome != 'success')
         env:
-          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_TOKEN: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.pick.outputs.tag }}
         run: |
           set -euo pipefail
           gh issue create --repo "$GITHUB_REPOSITORY" \
-            --title "Upstream sync failed: $TAG" --label "sync-failure" \
-            --body "$(printf 'Syncing `%s` did not produce a PR.\n\nRun: %s/%s/actions/runs/%s\n\nIf the agent ran, its session is attached to that run as an artifact.\n\nTo retry with a different model, assign this issue to the Copilot coding agent. To fix it by hand, resolve the merge locally with `rerere.enabled` on, then commit `.git/rr-cache` into `.rerere/` so the resolution replays next week.\n' "$TAG" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
+            --title "Upstream sync failed: ${TAG:-unknown tag}" --label "sync-failure" \
+            --body "$(printf 'Syncing `%s` did not produce a PR.\n\nRun: %s/%s/actions/runs/%s\n\nIf the agent ran, its session is attached to that run as an artifact.\n\nTo retry with a different model, assign this issue to the Copilot coding agent. To fix it by hand, resolve the merge locally with `rerere.enabled` on, then commit `.git/rr-cache` into `.rerere/` so the resolution replays next week.\n' "${TAG:-unknown, the run failed before a tag was picked}" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
 
   # GitHub disables scheduled workflows on repos idle for 60 days. Re-enabling the workflow counts
   # as activity. Done with a plain API call rather than a third-party action, so there is no
