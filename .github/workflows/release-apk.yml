@@ -24,6 +24,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # First, before anything slow. A bad tag should fail in seconds, not after a build.
+      - name: Validate release tag
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag '$TAG' must be exactly vX.Y.Z - three numbers, 'v' prefix, no suffix."
+            echo "::error::Suffixes are not cosmetic here: GithubSelfUpdaterImpl matches /v?(\d+)\.(\d+)(?:\.(\d+))?/"
+            echo "::error::and ignores anything after the third number, so 'v1.0.0-beta' and 'v1.0.0' compare as"
+            echo "::error::EQUAL and the in-app update is never offered. Retag and re-publish the release."
+            exit 1
+          fi
+          MINOR=$(echo "$TAG" | cut -d. -f2)
+          PATCH=$(echo "$TAG" | cut -d. -f3)
+          if [ "$MINOR" -gt 999 ] || [ "$PATCH" -gt 999 ]; then
+            echo "::error::'$TAG': minor and patch must each be <= 999, or the derived versionCode collides."
+            exit 1
+          fi
+          echo "Tag '$TAG' is valid."
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
@@ -45,12 +66,21 @@ jobs:
           encodedString: ${{ secrets.KEYSTORE_FILE }}
 
       - name: Prepare Gradle environment
+        id: prep
         run: |
           set -euo pipefail
+          # Record upstream's versionName before ci_version.gradle overrides it - build.gradle is
+          # never edited by this fork, so this stays an accurate record of the upstream base.
+          UPSTREAM=$(grep -oP 'versionName\s+"\K[^"]+' mastodon/build.gradle)
+          echo "upstream=$UPSTREAM" >> "$GITHUB_OUTPUT"
+          echo "Upstream base version: $UPSTREAM"
+
           # ci_signing.gradle wires the release keystore into the release/beta/githubRelease
           # build types. It reads the passwords from the environment rather than -P properties,
           # which keeps them out of the process list on the runner.
           echo "apply from: 'ci_signing.gradle'" >> mastodon/build.gradle
+          # ci_version.gradle derives versionName/versionCode from RELEASE_TAG.
+          echo "apply from: 'ci_version.gradle'" >> mastodon/build.gradle
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Build signed APK
@@ -58,6 +88,7 @@ jobs:
         env:
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Name the artifact after the release
         id: artifact
@@ -75,6 +106,14 @@ jobs:
           # refuses to install, which is a confusing thing to discover from a bug report.
           BT=$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* | sort -V | tail -1)
           "$BT/apksigner" verify --print-certs "$OUT" | grep -i "SHA-256 digest" | head -1
+
+          # Assert the APK really carries the version derived from the tag, rather than
+          # upstream's hardcoded numbers - i.e. that ci_version.gradle actually applied.
+          WANT_NAME="${TAG#v}"
+          GOT=$("$BT/aapt2" dump badging "$OUT" | head -1)
+          echo "$GOT"
+          echo "$GOT" | grep -q "versionName='${WANT_NAME}'" \
+            || { echo "::error::APK versionName is not ${WANT_NAME}; ci_version.gradle did not apply"; exit 1; }
 
       - name: Attach to release
         env:

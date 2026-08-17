@@ -32,6 +32,34 @@ echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 
 Build-Tools are downloaded by AGP itself once the SDK licences are accepted, so there's no version to pin. See [FORK.md](./FORK.md#toolchain) for the full toolchain notes.
 
+## Releasing
+
+**Tag releases `vX.Y.Z`. Exactly three numbers, `v` prefix, no suffix.** That is the whole process — publish a GitHub release with a conforming tag and everything else is automatic.
+
+`v1.2.3` ✅ · `v0.1-alpha` ❌ · `v1.2` ❌ · `1.2.3` ❌
+
+This is enforced, not a convention: the release workflow validates the tag before doing anything and fails in seconds if it doesn't conform.
+
+**Why suffixes are banned.** The in-app updater matches `/v?(\d+)\.(\d+)(?:\.(\d+))?/` and ignores everything after the third number, so `v1.0.0-beta` and `v1.0.0` compare as **equal** — users would simply never be offered the update. It fails silently, which is why the check exists.
+
+Publishing a release automatically:
+
+- derives `versionName` (`1.2.3`) and `versionCode` (`1002003`) from the tag
+- builds a signed APK and attaches it as `masto-nyc-vX.Y.Z.apk`
+- publishes `assetlinks.json` to Cloudflare with the current signing fingerprint
+
+### Which number to bump
+
+| Bump | When |
+| --- | --- |
+| patch | your own changes between upstream merges — fixes, strings, artwork |
+| minor | you merged an upstream release, or shipped a real feature |
+| major | your call |
+
+Versioning is **independent of upstream's**. Don't try to encode their version into yours — anything past the third number is invisible to the updater. Upstream's version is still recorded automatically: `build.gradle` is never edited by this fork, so its `versionName` remains an accurate note of which upstream release the fork sits on, and CI reads it at build time.
+
+**Never re-tag a released version.** Bump the patch instead. `versionCode` derives from the tag, Play rejects duplicates, and the updater caches by version.
+
 ## Contributing
 
 Bug reports and pull requests specific to this fork are welcome here. Anything that isn't masto.nyc-specific should go upstream to [mastodon/mastodon-android](https://github.com/mastodon/mastodon-android) instead, so that it benefits everyone and flows back into this fork on the next merge.

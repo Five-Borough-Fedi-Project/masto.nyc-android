@@ -110,6 +110,33 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
 done
 ```
 
+### Versioning
+
+Release tags must be exactly `vX.Y.Z`; see the README's Releasing section for the user-facing rule.
+The mechanics, and why they are arranged this way:
+
+`mastodon/ci_version.gradle` derives `versionName` and `versionCode` from `RELEASE_TAG` and is
+applied by CI via `apply from:`, the same trick `ci_signing.gradle` uses. **`build.gradle` is never
+edited.** Those two version lines are bumped by upstream on every one of their releases, so owning
+them would mean a merge conflict every single time we pull — and it would destroy the one useful
+side effect of leaving them alone, which is that `build.gradle`'s `versionName` stays an accurate,
+automatically maintained record of which upstream release this fork is built on. CI reads it before
+overriding.
+
+`versionCode = major*1000000 + minor*1000 + patch`, so minor and patch are capped at 999 — beyond
+that the arithmetic collides (`1.0.1000` would equal `1.1.0`). Both `ci_version.gradle` and the
+workflow reject that, along with any tag that isn't exactly three numbers.
+
+The suffix ban is not stylistic. `GithubSelfUpdaterImpl` matches
+`/v?(\d+)\.(\d+)(?:\.(\d+))?/` and discards anything after the third number, so `v1.0.0-beta` and
+`v1.0.0` compare equal and no update is ever offered. It fails silently, hence the up-front check.
+
+While you're in that file: upstream has a genuine bug at `GithubSelfUpdaterImpl:124`, where the
+current-version branch tests `matcher.group(3)` (the tag) but parses `curMatcher.group(3)` (the
+installed version). A three-part tag against a two-part installed version throws, the surrounding
+catch swallows it, and update detection stops working with no visible symptom. Standardising on
+three-part versions avoids it. Worth sending upstream.
+
 ## Toolchain
 
 - **JDK 21** (Temurin), matching what both CI workflows pin. Do not go newer: the Gradle wrapper

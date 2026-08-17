@@ -1,0 +1,47 @@
+// Included into build.gradle when building a release in CI. See FORK.md.
+//
+// Deliberately a separate file: build.gradle's versionCode/versionName are lines upstream bumps
+// on every one of their releases, so editing them here would hand us a merge conflict every single
+// time we pull upstream. Overriding from outside keeps build.gradle byte-identical to upstream
+// forever, and leaves its versionName as an accurate record of which upstream release we're on.
+
+def tag = System.getenv("RELEASE_TAG")
+if (!tag) {
+	throw new GradleException("RELEASE_TAG is not set. This file is only meant to be applied in CI.")
+}
+
+// Must be exactly vX.Y.Z. GithubSelfUpdaterImpl matches /v?(\d+)\.(\d+)(?:\.(\d+))?/ and ignores
+// anything after the third number, so "v1.0.0-beta" and "v1.0.0" compare EQUAL and the in-app
+// update is never offered. Suffixes are not a cosmetic choice here; they break updates.
+if (!(tag ==~ /^v\d+\.\d+\.\d+$/)) {
+	throw new GradleException("RELEASE_TAG '${tag}' must be exactly vX.Y.Z (no suffixes, no 'v1.2').")
+}
+
+def m = (tag =~ /^v(\d+)\.(\d+)\.(\d+)$/)
+def major = m[0][1] as int
+def minor = m[0][2] as int
+def patch = m[0][3] as int
+
+// versionCode must strictly increase and never repeat. 1000 per position gives room for 999
+// minor/patch releases; beyond that the arithmetic would collide (e.g. 1.0.1000 == 1.1.0).
+if (minor > 999 || patch > 999) {
+	throw new GradleException("RELEASE_TAG '${tag}': minor and patch must each be <= 999.")
+}
+def code = major * 1000000 + minor * 1000 + patch
+if (code > 2100000000) {
+	throw new GradleException("RELEASE_TAG '${tag}' produces versionCode ${code}, over Google Play's limit.")
+}
+
+// Capture upstream's value before overwriting it - that's the record of which upstream release
+// this fork is built on, and it is maintained for free by every upstream merge.
+def upstreamVersion = android.defaultConfig.versionName
+
+android {
+	defaultConfig {
+		versionName "${major}.${minor}.${patch}"
+		versionCode code
+	}
+}
+
+println "ci_version: ${tag} -> versionName ${major}.${minor}.${patch}, versionCode ${code} " +
+		"(upstream base ${upstreamVersion})"
