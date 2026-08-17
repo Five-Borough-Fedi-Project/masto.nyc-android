@@ -1,0 +1,24 @@
+// Everything this fork changes about the build, kept out of build.gradle's busiest region.
+//
+// build.gradle now carries exactly one line of ours, an `apply from:` at the very bottom. That
+// matters because upstream bumps versionCode and versionName in defaultConfig on every single
+// release, and git's default three lines of context mean anything we add near them conflicts every
+// time. Measured before this change: merging v2.13.2 onto v2.13.1 plus our delta conflicted on
+// `compileSdkMinor 0` purely because it sits four lines above the version bump. At 23 upstream
+// releases a year that is 23 guaranteed conflicts, each one waking the agent.
+//
+// The bottom of the dependencies block is dead space by comparison. Upstream appends dependencies
+// there occasionally, but not on a per-release cadence.
+
+android {
+	// Google no longer publishes a bare platforms;android-37. Every API 37 platform is
+	// minor-versioned, so compileSdk 37 alone fails to resolve. See FORK.md.
+	compileSdkMinor 0
+
+	defaultConfig {
+		// Distinct from upstream's org.joinmastodon.android so both can be installed at once, and
+		// so we can publish independently. Carries the OAuth callback scheme and the FileProvider
+		// authority with it, since both are templated from ${applicationId}.
+		applicationId "nyc.masto.android"
+	}
+}

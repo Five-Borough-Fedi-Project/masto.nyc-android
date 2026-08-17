@@ -1,0 +1,307 @@
+name: Sync upstream
+
+# Weekly: merge the newest upstream release tag into our branding delta, build it, open a PR.
+# The deterministic path spends no AI tokens. dsh only runs when the merge conflicts or the build
+# breaks, and its resolutions are recorded into .rerere/ so the same conflict is free next time.
+#
+# See docs/FORK_SYNC.md for why this merges rather than rebases, and why the rerere cache is
+# committed to the repo rather than kept in actions/cache.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Upstream tag to sync (default: newest)"
+        required: false
+      force:
+        description: "Sync even if the tag looks already merged"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+# Two runs racing on the same sync branch would clobber each other's push.
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+env:
+  UPSTREAM: https://github.com/mastodon/mastodon-android
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # A GitHub App rather than a bot account. Tokens are minted per run and expire in an hour,
+      # there is no second user to license or babysit, and unlike GITHUB_TOKEN the events it
+      # creates do trigger other workflows, which is what lets ci.yml see the sync PR at all.
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.SYNC_APP_ID }}
+          private-key: ${{ secrets.SYNC_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app.outputs.token }}
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-37.0 platform-tools"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Prepare git and load recorded conflict resolutions
+        run: |
+          set -euo pipefail
+          git config user.name "masto-nyc-sync[bot]"
+          git config user.email "${{ vars.SYNC_APP_ID }}+masto-nyc-sync[bot]@users.noreply.github.com"
+          git config rerere.enabled true
+          git config rerere.autoUpdate true
+          # .rerere/ is committed. actions/cache would be wrong here: GitHub evicts entries not
+          # accessed for 7 days and the cron is weekly, so the cache would survive only by luck.
+          # In the repo it is durable, reviewable in the PR that created it, and arrives on main
+          # through the same gate as everything else.
+          RR=$(git rev-parse --git-path rr-cache)
+          mkdir -p "$RR"
+          if [ -d .rerere ]; then cp -a .rerere/. "$RR"/; fi
+          echo "loaded $(find "$RR" -mindepth 1 -maxdepth 1 -type d | wc -l) recorded resolutions"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Pick the upstream tag
+        id: pick
+        env:
+          WANT: ${{ inputs.tag }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          git remote add upstream "$UPSTREAM" 2>/dev/null || git remote set-url upstream "$UPSTREAM"
+          git fetch --tags --quiet upstream
+
+          # Query the remote directly. Our own release tags (v0.0.1 and friends) live in the same
+          # local tag namespace after fetching upstream, so `git tag -l` would happily return one of
+          # ours as "the newest upstream tag" the moment our version number overtakes theirs.
+          upstream_tags() {
+            git ls-remote --tags upstream 'refs/tags/v*' | grep -v '\^{}' | sed 's|.*refs/tags/||' | sort -V
+          }
+          TAG="${WANT:-$(upstream_tags | tail -1)}"
+          [ -n "$TAG" ] || { echo "::error::No upstream tag found"; exit 1; }
+          git rev-parse -q --verify "refs/tags/$TAG^{commit}" >/dev/null \
+            || { echo "::error::Tag $TAG does not exist upstream"; exit 1; }
+
+          PREV=$(upstream_tags | grep -B1 -x "$TAG" | head -1)
+          [ "$PREV" = "$TAG" ] && PREV=""
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          echo "branch=sync/upstream-$TAG" >> "$GITHUB_OUTPUT"
+
+          if [ "$FORCE" != "true" ] && git merge-base --is-ancestor "$TAG" origin/main; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "$TAG is already an ancestor of main. Nothing to do."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Merge
+        id: merge
+        if: steps.pick.outputs.skip == 'false'
+        env:
+          TAG: ${{ steps.pick.outputs.tag }}
+          BRANCH: ${{ steps.pick.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git checkout -B "$BRANCH" origin/main
+          if git merge --no-edit "$TAG"; then
+            echo "conflicted=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$(git diff --name-only --diff-filter=U)" ]; then
+            git commit --no-edit
+            echo "resolved entirely from recorded resolutions"
+            echo "conflicted=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff --name-only --diff-filter=U | tee /tmp/conflicts.txt | sed 's/^/  conflict: /'
+            echo "conflicted=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        id: build
+        if: steps.pick.outputs.skip == 'false' && steps.merge.outputs.conflicted == 'false'
+        continue-on-error: true
+        run: ./gradlew assembleDebug --console=plain 2>&1 | tee /tmp/build.log
+
+      # Everything the agent needs, assembled deterministically and for free. Handing dsh a focused
+      # brief instead of "here is a repo, work it out" cuts input tokens by an order of magnitude
+      # and keeps it from wandering into files that are not in conflict.
+      - name: Write the conflict brief
+        id: brief
+        if: steps.pick.outputs.skip == 'false' && (steps.merge.outputs.conflicted == 'true' || steps.build.outcome == 'failure')
+        env:
+          TAG: ${{ steps.pick.outputs.tag }}
+          PREV: ${{ steps.pick.outputs.prev }}
+        run: |
+          set -euo pipefail
+          {
+            echo "# Conflict brief for $TAG"
+            echo
+            if [ -s /tmp/conflicts.txt ]; then
+              echo "## Files in conflict"
+              sed 's/^/- /' /tmp/conflicts.txt
+              echo
+              if [ -z "$PREV" ]; then
+                echo "## Upstream history"
+                echo "No previous upstream tag was resolved, so no per-file history is included."
+              else
+                echo "## What upstream changed in those files between $PREV and $TAG"
+              fi
+              while read -r f; do
+                echo "### $f"
+                [ -n "$PREV" ] && git log --oneline "$PREV..$TAG" -- "$f" | sed 's/^/    /' || true
+                echo
+              done < /tmp/conflicts.txt
+            else
+              echo "The merge was clean but the build failed. Build output:"
+              echo '```'
+              ./gradlew assembleDebug --console=plain 2>&1 | tail -60 || true
+              echo '```'
+            fi
+          } > /tmp/brief.md
+          wc -l /tmp/brief.md
+          echo "needed=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.brief.outputs.needed == 'true'
+        with:
+          node-version: 22
+
+      - name: Install DeepSeek Harness
+        if: steps.brief.outputs.needed == 'true'
+        env:
+          DSH_VERSION: ${{ vars.DSH_VERSION || '0.5.3' }}
+        run: |
+          set -euo pipefail
+          npm i -g "@deepseek-ai/dsh@${DSH_VERSION}"
+          dsh --version
+
+      - name: Resolve with the agent
+        id: agent
+        if: steps.brief.outputs.needed == 'true'
+        timeout-minutes: 45
+        continue-on-error: true
+        env:
+          # The inference key is scoped to this step alone. Nothing else in the workflow, and
+          # nothing in ci.yml, can read it.
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com' }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-v4-flash' }}
+          DSH_HOME: ${{ github.workspace }}/.dsh-home
+          DSH_PERMISSION_MODE: ${{ vars.DSH_PERMISSION_MODE || 'auto' }}
+          DSH_TELEMETRY_MODE: local
+          DSH_TOOLS_MODE: native
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TAG: ${{ steps.pick.outputs.tag }}
+          BRANCH: ${{ steps.pick.outputs.branch }}
+          REASON: ${{ steps.merge.outputs.conflicted == 'true' && 'the merge conflicted' || 'the merge was clean but the build failed' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$DSH_HOME/profiles/sync"
+          cp .dsh/profile/package.json .dsh/profile/cordis.patch.yml "$DSH_HOME/profiles/sync/"
+          envsubst < .dsh/profile/settings.yaml > "$DSH_HOME/settings.yaml"
+          printf 'LLM_API_KEY=%s\n' "$LLM_API_KEY" > "$DSH_HOME/.env"
+          chmod 600 "$DSH_HOME/.env"
+          echo "provider: $LLM_BASE_URL  model: $LLM_MODEL"
+
+          # Stable prefix first, run-specific detail last. deepseek-v4-flash bills cached input at
+          # $0.0028/M against $0.14/M for a miss, so keeping FORK.md and the task prompt in the
+          # same order every week makes the repeated part of the context nearly free.
+          { cat FORK.md; echo; envsubst < .dsh/task-sync.md; echo; cat /tmp/brief.md; } > /tmp/task.md
+          dsh --profile sync "$(cat /tmp/task.md)" | tee /tmp/agent-output.txt
+
+      - name: Record any new conflict resolutions
+        if: steps.brief.outputs.needed == 'true' && steps.agent.outcome == 'success'
+        run: |
+          set -euo pipefail
+          mkdir -p .rerere
+          cp -a "$(git rev-parse --git-path rr-cache)"/. .rerere/ 2>/dev/null || true
+          if ! git diff --quiet -- .rerere || [ -n "$(git status --porcelain .rerere)" ]; then
+            git add .rerere
+            git commit -m "Record conflict resolutions for ${{ steps.pick.outputs.tag }}"
+            echo "recorded; this conflict will resolve without the agent next time"
+          fi
+
+      - name: Push and open a PR
+        id: pr
+        if: steps.pick.outputs.skip == 'false' && (steps.build.outcome == 'success' || steps.agent.outcome == 'success')
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TAG: ${{ steps.pick.outputs.tag }}
+          BRANCH: ${{ steps.pick.outputs.branch }}
+          AGENT_RAN: ${{ steps.brief.outputs.needed }}
+        run: |
+          set -euo pipefail
+          git push -u origin "$BRANCH" --force-with-lease
+          if ! gh pr view "$BRANCH" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if [ "${AGENT_RAN:-}" = "true" ]; then
+              BODY=$(printf 'Merges upstream `%s`.\n\nThe merge needed conflict resolution. The agent'"'"'s own account of what it did:\n\n---\n\n%s\n\n---\n\nCI rebuilds this from scratch and is the gate. Do not take the above as verified.\n' "$TAG" "$(cat /tmp/agent-output.txt)")
+            else
+              BODY=$(printf 'Merges upstream `%s`. Clean merge, green build, no agent, no tokens spent.\n\nhttps://github.com/mastodon/mastodon-android/releases/tag/%s\n' "$TAG" "$TAG")
+            fi
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$BRANCH" \
+              --title "Sync upstream $TAG" --body "$BODY"
+          fi
+          gh pr merge "$BRANCH" --repo "$GITHUB_REPOSITORY" --auto --merge \
+            || echo "::warning::Could not enable auto-merge; check repo settings"
+
+      - name: Archive the session
+        if: always() && steps.brief.outputs.needed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-session-${{ steps.pick.outputs.tag }}
+          path: |
+            ${{ github.workspace }}/.dsh-home/sessions
+            ${{ github.workspace }}/.dsh-home/logs
+            /tmp/agent-output.txt
+            /tmp/brief.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Open an issue if this did not finish
+        if: steps.pick.outputs.skip == 'false' && steps.pr.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TAG: ${{ steps.pick.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Upstream sync failed: $TAG" --label "sync-failure" \
+            --body "$(printf 'Syncing `%s` did not produce a PR.\n\nRun: %s/%s/actions/runs/%s\n\nIf the agent ran, its session is attached to that run as an artifact.\n\nTo retry with a different model, assign this issue to the Copilot coding agent. To fix it by hand, resolve the merge locally with `rerere.enabled` on, then commit `.git/rr-cache` into `.rerere/` so the resolution replays next week.\n' "$TAG" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
+
+  # GitHub disables scheduled workflows on repos idle for 60 days. Re-enabling the workflow counts
+  # as activity. Done with a plain API call rather than a third-party action, so there is no
+  # unpinned third party in the critical path of the thing that keeps the cron alive.
+  keepalive:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    permissions:
+      actions: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/sync-upstream.yml/enable" \
+            --silent || echo "::warning::keepalive call failed; check the cron has not been disabled"

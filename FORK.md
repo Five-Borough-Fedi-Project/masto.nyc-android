@@ -42,7 +42,7 @@ Conflicts should be confined to the files below.
 
 | File | Change |
 | --- | --- |
-| `mastodon/build.gradle` | `applicationId` → `nyc.masto.android`; added `compileSdkMinor 0` |
+| `mastodon/build.gradle` | one line at the end: `apply from: 'fork.gradle'` |
 | `mastodon/src/main/AndroidManifest.xml` | deep links point at `masto.nyc` |
 | `mastodon/src/main/res/values/strings.xml` | `app_name`, `settings_contribute`, `settings_app_version`, `local_timeline_info_banner` |
 | `mastodon/src/main/res/values/urls.xml` | `github_url`, `privacy_policy_url` |
@@ -64,6 +64,17 @@ generated artwork under `res/drawable-*dpi/`.
 Changing `applicationId` also moves the OAuth callback scheme (`${applicationId}-auth://callback`)
 and the FileProvider authority, so neither needs editing. The built APK confirms it: the manifest
 ends up with `nyc.masto.android-auth`.
+
+### Why the build config lives in fork.gradle
+
+`applicationId` and `compileSdkMinor` sit in `mastodon/fork.gradle`, applied by a single line at the
+bottom of `build.gradle`. This is not tidiness. Upstream bumps `versionCode` and `versionName` in
+`defaultConfig` on every release, and git's three lines of context mean anything we add near them
+conflicts every time. Merging v2.13.2 onto v2.13.1 plus our delta was measured conflicting on
+exactly that, on `compileSdkMinor 0`, four lines above the version bump. At 23 upstream releases a
+year that is 23 guaranteed conflicts. With the config moved, the same merge is clean.
+
+Anything else we ever need to change about the build belongs in `fork.gradle` for the same reason.
 
 ### Why `compileSdkMinor 0` is there
 
