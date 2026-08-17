@@ -201,7 +201,7 @@ jobs:
       - name: Install DeepSeek Harness
         if: steps.brief.outputs.needed == 'true'
         env:
-          DSH_VERSION: ${{ vars.DSH_VERSION || '0.5.3' }}
+          DSH_VERSION: ${{ vars.DSH_VERSION || '0.1.0-rc.6' }}
         run: |
           set -euo pipefail
           npm i -g "@deepseek-ai/dsh@${DSH_VERSION}"
