@@ -27,7 +27,19 @@ platform :android do
       task: "bundle",
       build_type: "release",
     )
+    # Track and status are configurable so going live is a repo-variable change rather than a
+    # code change.
+    #
+    # Defaults are deliberately conservative. Upstream's lane had no track at all, which means
+    # production, and the store listing still carries upstream's screenshots. And until this app
+    # has had one production release, Play treats it as a "draft app" and the API rejects anything
+    # that is not release_status draft, which is the error this replaced.
+    #
+    # Once the listing is ready and a production release exists, set PLAY_TRACK=production and
+    # PLAY_RELEASE_STATUS=completed as repository variables.
     upload_to_play_store(
+      track: ENV["PLAY_TRACK"] || "internal",
+      release_status: ENV["PLAY_RELEASE_STATUS"] || "draft",
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
