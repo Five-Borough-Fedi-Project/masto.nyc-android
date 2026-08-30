@@ -72,6 +72,42 @@ jobs:
           mkdir fastlane/metadata/android
           mv fastlane/metadata/android_orig/en-US fastlane/metadata/android/
 
+      # fastlane's failure for a malformed key is one line buried under the Android SDK licence
+      # text, and it never says what is actually wrong with it. Check it here instead, reporting
+      # structure only so nothing sensitive reaches the log.
+      - name: Validate the service account key
+        env:
+          KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEY:-}" ]; then
+            echo "::error::GOOGLE_SERVICE_ACCOUNT_KEY is empty or unset."
+            exit 1
+          fi
+          printf '%s' "$KEY" > /tmp/sa.json
+          echo "length: $(wc -c < /tmp/sa.json) bytes"
+          echo "starts with: $(head -c 1 /tmp/sa.json)"
+          if ! python3 -c "import json;json.load(open('/tmp/sa.json'))" 2>/dev/null; then
+            echo "::error::The secret is not valid JSON."
+            echo "::error::It must be the entire .json file Google Cloud downloaded, pasted verbatim,"
+            echo "::error::starting with { and ending with }. Not base64, not quoted, not a file path."
+            exit 1
+          fi
+          python3 - <<'EOF'
+          import json
+          d = json.load(open('/tmp/sa.json'))
+          need = ["type", "project_id", "private_key", "client_email"]
+          missing = [k for k in need if not d.get(k)]
+          if missing:
+              print(f"::error::Valid JSON but missing required fields: {', '.join(missing)}")
+              raise SystemExit(1)
+          print(f"type={d['type']}  project={d['project_id']}  client_email={d['client_email']}")
+          if d["type"] != "service_account":
+              print("::error::type is not service_account. This looks like an OAuth client, not a service account key.")
+              raise SystemExit(1)
+          EOF
+          rm -f /tmp/sa.json
+
       - name: Build and deploy to Google Play
         run: bundle exec fastlane deploy
         env:
