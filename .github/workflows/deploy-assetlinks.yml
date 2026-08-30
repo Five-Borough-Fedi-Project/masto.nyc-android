@@ -81,9 +81,23 @@ jobs:
           # If the app ships through Play with App Signing, the APK users install is signed by
           # Google's key, not this one - and Google's is the fingerprint Android verifies against.
           # Without it, verification fails for every Play install while working fine from CI APKs.
+          # Play now offers quantum-ready hybrid signing, which produces three fingerprints: a new
+          # classical key and a PQC key for newer devices, plus the original classical key for
+          # older ones. Google's guidance is to register all of them, so this accepts a list
+          # separated by commas, spaces or newlines rather than a single value.
           if [ -n "${PLAY_APP_SIGNING_SHA256:-}" ]; then
             echo "Play App Signing fingerprint supplied; including it."
-            echo "play_sha=$PLAY_APP_SIGNING_SHA256" >> "$GITHUB_OUTPUT"
+            PLAY_LIST=$(printf '%s' "$PLAY_APP_SIGNING_SHA256" | tr ',[:space:]' '\n\n' | grep -E '^([0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2}$' | tr 'a-f' 'A-F' | sort -u)
+            if [ -z "$PLAY_LIST" ]; then
+              echo "::error::PLAY_APP_SIGNING_SHA256 is set but contains no valid SHA-256 fingerprint."
+              echo "::error::Expected colon-separated hex from Play Console > Release > Setup > App signing."
+              exit 1
+            fi
+            echo "Play fingerprints supplied: $(echo "$PLAY_LIST" | wc -l)"
+            echo "$PLAY_LIST" | sed 's/^/  /'
+            echo "play_sha<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$PLAY_LIST" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::PLAY_APP_SIGNING_SHA256 is not set. If this app is distributed via \
             Google Play with App Signing enabled, App Links will NOT verify for Play installs. \
@@ -97,8 +111,9 @@ jobs:
           PLAY_SHA: ${{ steps.fingerprints.outputs.play_sha }}
         run: |
           set -euo pipefail
-          FINGERPRINTS=$(jq -nc --arg a "$RELEASE_SHA" --arg b "${PLAY_SHA:-}" \
-            '[$a, $b] | map(select(. != "")) | unique')
+          FINGERPRINTS=$(printf '%s\n%s\n' "$RELEASE_SHA" "${PLAY_SHA:-}" \
+            | grep -E '^([0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2}$' \
+            | jq -Rn '[inputs] | unique')
 
           jq -n --arg pkg "$APP_ID" --argjson fps "$FINGERPRINTS" '
             [{
