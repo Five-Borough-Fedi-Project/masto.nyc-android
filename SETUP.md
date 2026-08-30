@@ -181,7 +181,27 @@ it access in Play Console. Release manager is enough; it does not need account-l
 Download the JSON key and store the entire file contents as the `GOOGLE_SERVICE_ACCOUNT_KEY`
 repository secret.
 
-### 5. After that, releases publish themselves
+### 5. Track and release status
+
+`build_and_deploy.yml` passes two repository variables through to fastlane:
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `PLAY_TRACK` | `internal` | `internal`, `alpha`, `beta` or `production` |
+| `PLAY_RELEASE_STATUS` | `draft` | `draft` or `completed` |
+
+Both defaults are deliberate. Upstream's lane specified no track, which means production, and the
+store listing still carries upstream's screenshots.
+
+More importantly, until this app has had one production release Play treats it as a draft app and
+the API refuses anything that is not a draft release:
+
+    Only releases with status draft may be created on draft app.
+
+A manual upload to internal testing does not clear that. Once the listing is ready and a production
+release exists, set `PLAY_TRACK=production` and `PLAY_RELEASE_STATUS=completed`.
+
+### 6. After that, releases publish themselves
 
 `build_and_deploy.yml` runs on a published GitHub release and pushes to Play, at the same time as
 `release-apk.yml` attaches the APK to the release. Both derive the version from the tag.
