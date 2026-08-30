@@ -1,19 +1,44 @@
 name: Build and deploy production
- 
+
+# Publishes to Google Play on a published GitHub release, alongside release-apk.yml which attaches
+# the APK to the release itself.
+#
+# The first upload for a new app cannot come from here. Google's Play Developer API refuses to
+# operate on an app that has never had a build uploaded through the Console, and fastlane surfaces
+# that as a confusing "app not found". Do one manual upload first; see SETUP.md.
+
 on:
-  push:
-    branches:
-      - 'ci_setup'
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish"
+        required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # Same rule as release-apk.yml. versionCode derives from this, and Play rejects a
+      # duplicate or lower versionCode permanently, so a malformed tag has to fail here rather
+      # than halfway through an upload.
+      - name: Validate release tag
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag '$TAG' must be exactly vX.Y.Z"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Set up JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: temurin
@@ -25,7 +50,9 @@ jobs:
           bundler-cache: true
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-37.0 platform-tools"
 
       - name: Decode keystore
         uses: timheuer/base64-to-file@v1
@@ -37,6 +64,10 @@ jobs:
       - name: Prepare Gradle environment
         run: |
           echo "apply from: 'ci_signing.gradle'" >> mastodon/build.gradle
+          # Without this the bundle carries upstream's hardcoded versionCode 189. Play accepts that
+          # once and then rejects every later upload as a duplicate, which is unrecoverable for
+          # that number.
+          echo "apply from: 'ci_version.gradle'" >> mastodon/build.gradle
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Remove translations from fastlane metadata
@@ -50,6 +81,7 @@ jobs:
         env:
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           SUPPLY_SKIP_UPLOAD_METADATA: true
 
@@ -58,6 +90,7 @@ jobs:
         env:
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Upload release apk
         uses: actions/upload-artifact@v4
@@ -70,6 +103,7 @@ jobs:
         env:
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Upload githubRelease apk
         uses: actions/upload-artifact@v4

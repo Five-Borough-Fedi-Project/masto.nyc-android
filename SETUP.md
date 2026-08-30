@@ -132,3 +132,70 @@ The routine path spends nothing. Only conflicting weeks call the model.
 input at $0.0028. A conflict resolution reading a handful of files is well under a million tokens,
 so a conflicting week costs cents. The Copilot plan in step 5, if you enable it, will cost more than
 the model does.
+
+## Publishing to Google Play
+
+The first upload cannot be automated. Google's Play Developer API refuses to operate on an app that
+has never had a build uploaded through the Console, and fastlane reports that as a confusing
+"app not found". Everything below is in order, and steps 1 to 4 are one-time.
+
+### 1. Create the app in Play Console
+
+All apps, Create app. Name it Masto NYC, set default language, App, and Free. The package name is
+fixed by the first upload, so it is worth being sure it is `nyc.masto.android` before you upload.
+
+### 2. Clear the declarations
+
+Play blocks publishing to any track, including internal testing, until these are done: privacy
+policy URL, app access, ads, content rating questionnaire, target audience, data safety, government
+apps, and financial features. Data safety is the slow one, because it asks exactly what the app
+collects and transmits.
+
+The privacy policy URL is `https://masto.nyc/privacy-policy`, matching `values/urls.xml`.
+
+### 3. Build a bundle and upload it by hand
+
+Play wants an AAB, not an APK, for a new app.
+
+    RELEASE_TAG=v0.1.0 ./gradlew bundleRelease \
+      -Pandroid.injected.signing.store.file=$HOME/keys/masto-nyc-release.jks \
+      -Pandroid.injected.signing.store.password=... \
+      -Pandroid.injected.signing.key.alias=key0 \
+      -Pandroid.injected.signing.key.password=...
+
+`RELEASE_TAG` is required: `ci_version.gradle` derives versionCode from it and throws without it.
+The output is in `mastodon/build/outputs/bundle/release/`.
+
+Upload it to Internal testing. That upload is what activates the API for this app.
+
+### 4. Service account for the API
+
+Play Console, Setup, API access. Link a Google Cloud project, create a service account, then grant
+it access in Play Console. Release manager is enough; it does not need account-level admin.
+
+Download the JSON key and store the entire file contents as the `GOOGLE_SERVICE_ACCOUNT_KEY`
+repository secret.
+
+### 5. After that, releases publish themselves
+
+`build_and_deploy.yml` runs on a published GitHub release and pushes to Play, at the same time as
+`release-apk.yml` attaches the APK to the release. Both derive the version from the tag.
+
+### Play App Signing breaks App Links, and does it silently
+
+With App Signing on, which is effectively mandatory for new apps, Google re-signs your bundle with
+their key. The APK users install is signed by Google, not by `masto-nyc-release.jks`. That means the
+fingerprint currently published in `assetlinks.json` is wrong for every Play install, while
+remaining correct for APKs from GitHub releases. Nothing errors. Links just stop opening in the app
+for anyone who installed from Play.
+
+Copy the SHA-256 from Play Console, Release, Setup, App signing, into the `PLAY_APP_SIGNING_SHA256`
+repository secret. `deploy-assetlinks.yml` already reads it and publishes both fingerprints, which
+keeps sideloaded and Play installs working at once. It warns when the secret is missing.
+
+### Store listing
+
+`icon.png` and `featureGraphic.png` are current. The eight screenshots are still upstream's and show
+the old branding, so retake them before going public. CI does not upload any of these: both fastlane
+lanes pass `skip_upload_images` and the workflows set `SUPPLY_SKIP_UPLOAD_METADATA`, so the listing
+is managed by hand in the Console for now.
