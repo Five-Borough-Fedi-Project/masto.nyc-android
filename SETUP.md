@@ -189,9 +189,22 @@ fingerprint currently published in `assetlinks.json` is wrong for every Play ins
 remaining correct for APKs from GitHub releases. Nothing errors. Links just stop opening in the app
 for anyone who installed from Play.
 
-Copy the SHA-256 from Play Console, Release, Setup, App signing, into the `PLAY_APP_SIGNING_SHA256`
-repository secret. `deploy-assetlinks.yml` already reads it and publishes both fingerprints, which
-keeps sideloaded and Play installs working at once. It warns when the secret is missing.
+Copy the SHA-256 fingerprints from Play Console, Release, Setup, App signing into the
+`PLAY_APP_SIGNING_SHA256` repository secret. `deploy-assetlinks.yml` publishes them alongside the
+release key's own fingerprint, so sideloaded and Play installs both keep working.
+
+Take them from the **app signing key** section, not the upload key. Google re-signs your bundle, so
+the upload key never signs anything a user installs. Using it produces a file that looks right and
+verifies nothing.
+
+If quantum-ready hybrid signing is enabled, Play shows three fingerprints rather than one: a new
+classical key and a PQC key for newer devices, plus the original classical key for older ones.
+Register all of them. The secret accepts a list separated by commas, spaces or newlines, and the
+workflow validates the format and refuses to deploy if none of them parse.
+
+The PQC key is not a replacement for the classical one. `sha256_cert_fingerprints` is an array, an
+entry that matches nothing is inert, and leaving one out breaks App Links for whichever slice of
+devices used that key.
 
 ### Store listing
 
