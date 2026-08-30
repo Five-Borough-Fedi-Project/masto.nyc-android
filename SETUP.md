@@ -163,8 +163,13 @@ Play wants an AAB, not an APK, for a new app.
       -Pandroid.injected.signing.key.alias=key0 \
       -Pandroid.injected.signing.key.password=...
 
-`RELEASE_TAG` is required: `ci_version.gradle` derives versionCode from it and throws without it.
-The output is in `mastodon/build/outputs/bundle/release/`.
+`RELEASE_TAG` is what sets the version. Without it the build keeps upstream's `versionCode 189`
+and `versionName 2.13.2`, and prints a notice saying so. Uploading that would show your app as
+version 2.13.2 in Play and burn 189 as the permanent floor, after which any later tag deriving a
+lower code is rejected forever.
+
+Check the build output says `ci_version: v0.1.0 -> versionName 0.1.0, versionCode 1000` before you
+upload anything. The output is in `mastodon/build/outputs/bundle/release/`.
 
 Upload it to Internal testing. That upload is what activates the API for this app.
 

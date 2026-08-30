@@ -5,9 +5,15 @@
 // time we pull upstream. Overriding from outside keeps build.gradle byte-identical to upstream
 // forever, and leaves its versionName as an accurate record of which upstream release we're on.
 
+// Applied unconditionally from fork.gradle so that a local build and a CI build behave the same.
+// Without RELEASE_TAG we leave upstream's versionCode and versionName alone, which is what an
+// ordinary debug build wants. Set RELEASE_TAG and the version comes from the tag, wherever you
+// are. Two ways to build the same artifact is how a release bundle ends up stamped 2.13.2.
 def tag = System.getenv("RELEASE_TAG")
 if (!tag) {
-	throw new GradleException("RELEASE_TAG is not set. This file is only meant to be applied in CI.")
+	logger.lifecycle("ci_version: RELEASE_TAG not set, keeping upstream's version. " +
+			"Set it to vX.Y.Z when building anything you intend to publish.")
+	return
 }
 
 // Must be exactly vX.Y.Z. GithubSelfUpdaterImpl matches /v?(\d+)\.(\d+)(?:\.(\d+))?/ and ignores
