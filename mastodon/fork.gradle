@@ -22,3 +22,7 @@ android {
 		applicationId "nyc.masto.android"
 	}
 }
+
+// Version derivation, active only when RELEASE_TAG is set. Applied here rather than appended by
+// each workflow so local and CI builds cannot drift apart.
+apply from: 'ci_version.gradle'

@@ -64,10 +64,6 @@ jobs:
       - name: Prepare Gradle environment
         run: |
           echo "apply from: 'ci_signing.gradle'" >> mastodon/build.gradle
-          # Without this the bundle carries upstream's hardcoded versionCode 189. Play accepts that
-          # once and then rejects every later upload as a duplicate, which is unrecoverable for
-          # that number.
-          echo "apply from: 'ci_version.gradle'" >> mastodon/build.gradle
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Remove translations from fastlane metadata

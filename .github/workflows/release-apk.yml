@@ -79,8 +79,6 @@ jobs:
           # build types. It reads the passwords from the environment rather than -P properties,
           # which keeps them out of the process list on the runner.
           echo "apply from: 'ci_signing.gradle'" >> mastodon/build.gradle
-          # ci_version.gradle derives versionName/versionCode from RELEASE_TAG.
-          echo "apply from: 'ci_version.gradle'" >> mastodon/build.gradle
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Build signed APK
