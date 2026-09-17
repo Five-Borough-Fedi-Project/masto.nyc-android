@@ -266,7 +266,7 @@ public class ListMembersFragment extends PaginatedAccountListFragment implements
 		inSelectionMode=true;
 		updateItemsForSelectionModeTransition();
 		V.setVisibilityAnimated(fab, View.INVISIBLE);
-		actionMode=ActionModeHelper.startActionMode(this, ()->elevationOnScrollListener.getCurrentStatusBarColor(), new ActionMode.Callback(){
+		actionMode=ActionModeHelper.startActionMode(this, elevationOnScrollListener, new ActionMode.Callback(){
 			@Override
 			public boolean onCreateActionMode(ActionMode mode, Menu menu){
 				return true;
@@ -395,11 +395,11 @@ public class ListMembersFragment extends PaginatedAccountListFragment implements
 
 	@Override
 	protected void setStatusBarColor(int color){
-		rootView.setStatusBarColor(color);
+		rootView.setStatusBarBackgroundColor(color);
 	}
 
 	@Override
 	protected void setNavigationBarColor(int color){
-		rootView.setNavigationBarColor(color);
+		rootView.setNavigationBarBackgroundColor(color);
 	}
 }

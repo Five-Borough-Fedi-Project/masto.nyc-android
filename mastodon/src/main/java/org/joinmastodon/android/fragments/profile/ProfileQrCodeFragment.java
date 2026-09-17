@@ -121,7 +121,7 @@ public class ProfileQrCodeFragment extends AppKitFragment{
 	@Override
 	public void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
-		setStyle(STYLE_NO_FRAME, 0);
+		setStyle(STYLE_NO_FRAME, R.style.Theme_Mastodon_Dialog_NoFrame_TransparentSystemBars);
 		setHasOptionsMenu(true);
 		accountID=getArguments().getString("account");
 		account=Parcels.unwrap(getArguments().getParcelable("targetAccount"));
@@ -135,10 +135,10 @@ public class ProfileQrCodeFragment extends AppKitFragment{
 		Dialog dlg=getDialog();
 		dlg.getWindow().setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
 		dlg.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR);
-		dlg.getWindow().setNavigationBarColor(0);
-		dlg.getWindow().setStatusBarColor(0);
 		WindowManager.LayoutParams lp=dlg.getWindow().getAttributes();
-		if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.P){
+		if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R){
+			lp.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+		}else if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.P){
 			lp.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 		}
 		dlg.getWindow().setAttributes(lp);

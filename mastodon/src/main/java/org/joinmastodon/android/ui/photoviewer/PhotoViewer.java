@@ -165,12 +165,12 @@ public class PhotoViewer implements ZoomPanView.Listener{
 	private static final Property<FragmentRootLinearLayout, Integer> STATUS_BAR_COLOR_PROPERTY=new Property<>(Integer.class, "Fdsafdsa"){
 		@Override
 		public Integer get(FragmentRootLinearLayout object){
-			return object.getStatusBarColor();
+			return object.getStatusBarBackgroundColor();
 		}
 
 		@Override
 		public void set(FragmentRootLinearLayout object, Integer value){
-			object.setStatusBarColor(value);
+			object.setStatusBarBackgroundColor(value);
 		}
 	};
 
@@ -275,8 +275,8 @@ public class PhotoViewer implements ZoomPanView.Listener{
 		pager.setMotionEventSplittingEnabled(false);
 
 		uiOverlay=activity.getLayoutInflater().inflate(R.layout.photo_viewer_ui, windowView).findViewById(R.id.photo_viewer_overlay);
-		uiOverlay.setStatusBarColor(0x80000000);
-		uiOverlay.setNavigationBarColor(0x80000000);
+		uiOverlay.setStatusBarBackgroundColor(0x80000000);
+		uiOverlay.setNavigationBarBackgroundColor(0x80000000);
 		toolbarWrap=uiOverlay.findViewById(R.id.toolbar_wrap);
 		backButton=uiOverlay.findViewById(R.id.btn_back);
 		backButton.setOnClickListener(v->onStartSwipeToDismissTransition(0));
@@ -669,8 +669,8 @@ public class PhotoViewer implements ZoomPanView.Listener{
 		int alpha=background.getAlpha();
 		background.setColor(color);
 		background.setAlpha(alpha);
-		uiOverlay.setStatusBarColor(color & 0xe6ffffff);
-		uiOverlay.setNavigationBarColor(color & 0xe6ffffff);
+		uiOverlay.setStatusBarBackgroundColor(color & 0xe6ffffff);
+		uiOverlay.setNavigationBarBackgroundColor(color & 0xe6ffffff);
 		bottomBar.setBackgroundTintList(ColorStateList.valueOf(color));
 	}
 	

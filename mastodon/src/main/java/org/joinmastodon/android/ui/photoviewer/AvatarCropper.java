@@ -102,8 +102,8 @@ public class AvatarCropper implements ZoomPanView.Listener{
 			return false;
 		});
 		closeButton.setOnClickListener(v->dismiss(true, onCancel));
-		overlay.setStatusBarColor(0);
-		overlay.setNavigationBarColor(0);
+		overlay.setStatusBarBackgroundColor(0);
+		overlay.setNavigationBarBackgroundColor(0);
 		overlay.setBackground(new OverlayDrawable());
 		zoomPanView.setListener(this);
 		zoomPanView.setFill(true);
