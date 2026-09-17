@@ -1,0 +1,50 @@
+[
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/loading.xml",
+        "source": "me.grishka.appkit-main-6:/layout/loading.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/appkit_toolbar.xml",
+        "source": "me.grishka.appkit-main-6:/layout/appkit_toolbar.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/loader_fragment.xml",
+        "source": "me.grishka.appkit-main-6:/layout/loader_fragment.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/appkit_navigation_spinner.xml",
+        "source": "me.grishka.appkit-main-6:/layout/appkit_navigation_spinner.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/appkit_empty.xml",
+        "source": "me.grishka.appkit-main-6:/layout/appkit_empty.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/recycler_fragment.xml",
+        "source": "me.grishka.appkit-main-6:/layout/recycler_fragment.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/appkit_load_more.xml",
+        "source": "me.grishka.appkit-main-6:/layout/appkit_load_more.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/appkit_error.xml",
+        "source": "me.grishka.appkit-main-6:/layout/appkit_error.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/tabbed_loader_fragment.xml",
+        "source": "me.grishka.appkit-main-6:/layout/tabbed_loader_fragment.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/appkit_toolbar_fragment.xml",
+        "source": "me.grishka.appkit-main-6:/layout/appkit_toolbar_fragment.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/list_fragment.xml",
+        "source": "me.grishka.appkit-main-6:/layout/list_fragment.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/layout/appkit_spinner_view.xml",
+        "source": "me.grishka.appkit-main-6:/layout/appkit_spinner_view.xml"
+    }
+]

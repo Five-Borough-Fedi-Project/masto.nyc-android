@@ -1,0 +1,185 @@
+From 3041129cb5c2f564a021f939a8499c29dad539d8 Mon Sep 17 00:00:00 2001
+From: seano-vs <seano@5bfp.org>
+Date: Wed, 16 Sep 2026 23:49:06 -0400
+Subject: [PATCH] Stop using Window.setStatusBarColor/setNavigationBarColor
+
+Both are deprecated from API 35, where they do nothing, and Play Console now flags apps that call
+them. FragmentStackActivity called them to make the system bars transparent. Theme.AppKit now does
+that with android:statusBarColor and android:navigationBarColor instead, and fragments read the
+color to paint behind the bars from new appkitStatusBarColor and appkitNavigationBarColor
+attributes. The android: attributes are still read as a fallback for themes that don't inherit
+from Theme.AppKit.
+
+FragmentRootLinearLayout's setStatusBarColor/setNavigationBarColor (and getters) are renamed to
+set/getStatusBarBackgroundColor and set/getNavigationBarBackgroundColor. Play Console flags them by
+name as if they were the Window methods, and the new names say what they actually do.
+
+Migration for apps: move android:statusBarColor and android:navigationBarColor in themes to
+appkitStatusBarColor and appkitNavigationBarColor, and rename calls to the FragmentRootLinearLayout
+methods, including ObjectAnimator property names ("statusBarColor" -> "statusBarBackgroundColor").
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+---
+ .../grishka/appkit/FragmentStackActivity.java | 11 ++++----
+ .../appkit/fragments/AppKitFragment.java      | 25 ++++++++++++++-----
+ .../views/FragmentRootLinearLayout.java       | 13 +++++++---
+ appkit/src/main/res/values/attrs.xml          |  4 +++
+ appkit/src/main/res/values/themes.xml         | 10 ++++++--
+ 5 files changed, 45 insertions(+), 18 deletions(-)
+
+diff --git a/appkit/src/main/java/me/grishka/appkit/FragmentStackActivity.java b/appkit/src/main/java/me/grishka/appkit/FragmentStackActivity.java
+index d1166a3..96f3078 100644
+--- a/appkit/src/main/java/me/grishka/appkit/FragmentStackActivity.java
++++ b/appkit/src/main/java/me/grishka/appkit/FragmentStackActivity.java
+@@ -73,9 +73,11 @@ public class FragmentStackActivity extends Activity{
+ 		getWindow().getDecorView().setSystemUiVisibility(getWindow().getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+ 		setContentView(content);
+ 
++		// The system bars themselves are made transparent by the theme (Theme.AppKit sets
++		// android:statusBarColor and android:navigationBarColor), not by calling
++		// Window.setStatusBarColor/setNavigationBarColor, which are deprecated from API 35. Fragments
++		// paint their own colors behind the bars, see FragmentRootLinearLayout.
+ 		getWindow().setBackgroundDrawable(new ColorDrawable(0));
+-		getWindow().setStatusBarColor(0);
+-		getWindow().setNavigationBarColor(0);
+ 
+ 		if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.UPSIDE_DOWN_CAKE){
+ 			stackOnBackInvokedCallback=new PredictiveBackAnimationCallback();
+@@ -593,10 +595,7 @@ public class FragmentStackActivity extends Activity{
+ 	}
+ 
+ 	protected int getPredictiveBackBackgroundColor(){
+-		TypedArray ta=obtainStyledAttributes(new int[]{android.R.attr.statusBarColor});
+-		int color=ta.getColor(0, 0xff00ff00);
+-		ta.recycle();
+-		return color;
++		return AppKitFragment.getSystemBarBackgroundColor(this, R.attr.appkitStatusBarColor, android.R.attr.statusBarColor);
+ 	}
+ 
+ 	protected int getPredictiveBackOverlayColor(){
+diff --git a/appkit/src/main/java/me/grishka/appkit/fragments/AppKitFragment.java b/appkit/src/main/java/me/grishka/appkit/fragments/AppKitFragment.java
+index fa80618..5998d56 100755
+--- a/appkit/src/main/java/me/grishka/appkit/fragments/AppKitFragment.java
++++ b/appkit/src/main/java/me/grishka/appkit/fragments/AppKitFragment.java
+@@ -205,10 +205,8 @@ public class AppKitFragment extends DialogFragment implements WindowInsetsAwareF
+ 		super.onViewCreated(view, savedInstanceState);
+ 		rootView=view;
+ 
+-		TypedArray ta=rootView.getContext().obtainStyledAttributes(new int[]{android.R.attr.statusBarColor, android.R.attr.navigationBarColor});
+-		setStatusBarColor(ta.getColor(0, 0xFF000000));
+-		setNavigationBarColor(ta.getColor(1, 0xFF000000));
+-		ta.recycle();
++		setStatusBarColor(getSystemBarBackgroundColor(rootView.getContext(), R.attr.appkitStatusBarColor, android.R.attr.statusBarColor));
++		setNavigationBarColor(getSystemBarBackgroundColor(rootView.getContext(), R.attr.appkitNavigationBarColor, android.R.attr.navigationBarColor));
+ 
+ 		toolbar=(Toolbar)view.findViewById(R.id.toolbar);
+ 		if(toolbar!=null && getArguments()!=null && getArguments().getBoolean(EXTRA_IS_TAB)){
+@@ -518,12 +516,27 @@ public class AppKitFragment extends DialogFragment implements WindowInsetsAwareF
+ 
+ 	protected void setStatusBarColor(int color){
+ 		if(rootView instanceof FragmentRootLinearLayout)
+-			((FragmentRootLinearLayout) rootView).setStatusBarColor(color);
++			((FragmentRootLinearLayout) rootView).setStatusBarBackgroundColor(color);
+ 	}
+ 
+ 	protected void setNavigationBarColor(int color){
+ 		if(rootView instanceof FragmentRootLinearLayout)
+-			((FragmentRootLinearLayout) rootView).setNavigationBarColor(color);
++			((FragmentRootLinearLayout) rootView).setNavigationBarBackgroundColor(color);
++	}
++
++	/**
++	 * Reads the color to paint behind a system bar. Themes should set appkitStatusBarColor and
++	 * appkitNavigationBarColor, leaving android:statusBarColor and android:navigationBarColor
++	 * transparent, since from API 35 the window ignores those and the app draws behind the bars
++	 * regardless. The android: attribute is still read as a fallback for themes written before
++	 * the appkit attributes existed.
++	 */
++	public static int getSystemBarBackgroundColor(Context context, int appkitAttr, int legacyAttr){
++		// android: attributes sort before app ones, and obtainStyledAttributes wants ascending order
++		TypedArray ta=context.obtainStyledAttributes(new int[]{legacyAttr, appkitAttr});
++		int color=ta.hasValue(1) ? ta.getColor(1, 0xFF000000) : ta.getColor(0, 0xFF000000);
++		ta.recycle();
++		return color;
+ 	}
+ 
+ 	@Override
+diff --git a/appkit/src/main/java/me/grishka/appkit/views/FragmentRootLinearLayout.java b/appkit/src/main/java/me/grishka/appkit/views/FragmentRootLinearLayout.java
+index daa062d..824a159 100644
+--- a/appkit/src/main/java/me/grishka/appkit/views/FragmentRootLinearLayout.java
++++ b/appkit/src/main/java/me/grishka/appkit/views/FragmentRootLinearLayout.java
+@@ -45,20 +45,25 @@ public class FragmentRootLinearLayout extends LinearLayout{
+ 		super.setWindowInsetsAnimationCallback(callback==null ? null : new DelegatingWindowInsetsAnimationCallback(callback));
+ 	}
+ 
+-	public int getStatusBarColor(){
++	// These colors are painted by this view into the areas covered by the system bars. The window's
++	// own bars are always transparent. Named *BackgroundColor rather than after Window's
++	// setStatusBarColor/setNavigationBarColor, which are deprecated from API 35 and which Play
++	// Console flags by name.
++
++	public int getStatusBarBackgroundColor(){
+ 		return statusBarColor;
+ 	}
+ 
+-	public void setStatusBarColor(int statusBarColor){
++	public void setStatusBarBackgroundColor(int statusBarColor){
+ 		this.statusBarColor=statusBarColor;
+ 		invalidate();
+ 	}
+ 
+-	public int getNavigationBarColor(){
++	public int getNavigationBarBackgroundColor(){
+ 		return navigationBarColorBottom;
+ 	}
+ 
+-	public void setNavigationBarColor(int navigationBarColor){
++	public void setNavigationBarBackgroundColor(int navigationBarColor){
+ 		this.navigationBarColorBottom=navigationBarColorSide=navigationBarColor;
+ 		invalidate();
+ 	}
+diff --git a/appkit/src/main/res/values/attrs.xml b/appkit/src/main/res/values/attrs.xml
+index 7e1fe90..11d5fa5 100644
+--- a/appkit/src/main/res/values/attrs.xml
++++ b/appkit/src/main/res/values/attrs.xml
+@@ -11,4 +11,8 @@
+ 	<attr name="appkitToolbarElevation" format="dimension"/>
+ 	<attr name="appkitToolbarBackground" format="color|reference"/>
+ 	<attr name="actionBarIconTint" format="color|reference"/>
++	<!-- Colors fragments paint behind the status and navigation bars. Set these instead of
++	     android:statusBarColor/android:navigationBarColor, which should stay transparent. -->
++	<attr name="appkitStatusBarColor" format="color|reference"/>
++	<attr name="appkitNavigationBarColor" format="color|reference"/>
+ </resources>
+\ No newline at end of file
+diff --git a/appkit/src/main/res/values/themes.xml b/appkit/src/main/res/values/themes.xml
+index a19a804..c41db1d 100644
+--- a/appkit/src/main/res/values/themes.xml
++++ b/appkit/src/main/res/values/themes.xml
+@@ -6,7 +6,10 @@
+ 		<item name="android:windowActionBar">false</item>
+ 		<item name="emptyViewLayout">@layout/appkit_empty</item>
+ 		<item name="errorViewLayout">@layout/appkit_error</item>
+-		<item name="android:navigationBarColor">#000</item>
++		<item name="android:statusBarColor">@android:color/transparent</item>
++		<item name="android:navigationBarColor">@android:color/transparent</item>
++		<item name="appkitStatusBarColor">?android:colorPrimaryDark</item>
++		<item name="appkitNavigationBarColor">#000</item>
+ 		<item name="android:titleTextAppearance">@android:style/TextAppearance.Material.Widget.Toolbar.Title</item>
+ 		<item name="android:subtitleTextAppearance">@android:style/TextAppearance.Material.Widget.Toolbar.Subtitle</item>
+ 		<item name="appkitToolbarBackground">?android:attr/colorPrimary</item>
+@@ -23,7 +26,10 @@
+ 		<item name="android:windowActionBar">false</item>
+ 		<item name="emptyViewLayout">@layout/appkit_empty</item>
+ 		<item name="errorViewLayout">@layout/appkit_error</item>
+-		<item name="android:navigationBarColor">#000</item>
++		<item name="android:statusBarColor">@android:color/transparent</item>
++		<item name="android:navigationBarColor">@android:color/transparent</item>
++		<item name="appkitStatusBarColor">?android:colorPrimaryDark</item>
++		<item name="appkitNavigationBarColor">#000</item>
+ 		<item name="android:titleTextAppearance">@android:style/TextAppearance.Material.Widget.Toolbar.Title</item>
+ 		<item name="android:subtitleTextAppearance">@android:style/TextAppearance.Material.Widget.Toolbar.Subtitle</item>
+ 		<item name="appkitToolbarBackground">?android:attr/colorPrimary</item>
+-- 
+2.43.0
+

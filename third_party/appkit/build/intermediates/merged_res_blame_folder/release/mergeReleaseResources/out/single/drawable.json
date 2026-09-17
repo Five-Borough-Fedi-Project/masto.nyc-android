@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "me.grishka.appkit-release-5:/drawable/ic_menu.xml",
+        "source": "me.grishka.appkit-main-6:/drawable/ic_menu.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/drawable/ic_arrow_drop_down.xml",
+        "source": "me.grishka.appkit-main-6:/drawable/ic_arrow_drop_down.xml"
+    },
+    {
+        "merged": "me.grishka.appkit-release-5:/drawable/ic_arrow_back.xml",
+        "source": "me.grishka.appkit-main-6:/drawable/ic_arrow_back.xml"
+    }
+]

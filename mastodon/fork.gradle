@@ -23,6 +23,15 @@ android {
 	}
 }
 
+// Build against the patched appkit in third_party/appkit instead of the published artifact. The
+// version in build.gradle stays upstream's, so dropping this block is all it takes to go back once
+// appkit publishes the fix. See third_party/appkit/README.md.
+configurations.configureEach {
+	resolutionStrategy.dependencySubstitution {
+		substitute module('me.grishka.appkit:appkit') using project(':appkit')
+	}
+}
+
 // Version derivation, active only when RELEASE_TAG is set. Applied here rather than appended by
 // each workflow so local and CI builds cannot drift apart.
 apply from: 'ci_version.gradle'
