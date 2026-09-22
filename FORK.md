@@ -56,9 +56,12 @@ Conflicts should be confined to the files below.
 | `res/drawable-anydpi-v26/ic_launcher_{foreground,background,monochrome}.xml` | replaced artwork |
 | `res/mipmap-*/ic_launcher.png` | replaced artwork |
 | `README.md`, `fastlane/metadata/android/en-US/*` | store listing and repo docs |
+| `settings.gradle` | one line at the end: `apply from: 'fork-settings.gradle'` |
+| `gradle.properties` | `android.nonTransitiveRClass=false`, see [below](#patched-appkit) |
+| `res/values/styles.xml`, `.../ui/utils/ActionModeHelper.java`, `.../utils/ElevationOnScrollListener.java`, `.../ui/photoviewer/{PhotoViewer,AvatarCropper}.java`, `.../fragments/{ListMembers,CreateListAddMembers}Fragment.java`, `.../settings/FilterWordsFragment.java`, `.../profile/ProfileQrCodeFragment.java` | system bar colors without deprecated APIs, see [below](#patched-appkit) |
 
 These are new files, so they can never conflict: `ForkConfig.java`, `ci_version.gradle`,
-`FORK.md`, `deploy/`, and the
+`FORK.md`, `deploy/`, `fork-settings.gradle`, `third_party/`, and the
 generated artwork under `res/drawable-*dpi/`.
 
 Changing `applicationId` also moves the OAuth callback scheme (`${applicationId}-auth://callback`)
@@ -113,6 +116,24 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
   unzip -p app.apk $d | strings | grep -c MastodonAndroid
 done
 ```
+
+### Patched appkit
+
+Play Console flags calls to `Window.setStatusBarColor` and `setNavigationBarColor`, deprecated from
+Android 15, and most of ours were in appkit. `third_party/appkit` is appkit built from source with a
+patch that makes the bars transparent through the theme instead, and renames
+`FragmentRootLinearLayout`'s color setters, which Play flags by name. Its
+[README](third_party/appkit/README.md) covers what's patched and how to drop it.
+
+The app side is ordinary edits to upstream files, kept as its own commit so it can go to
+mastodon/mastodon-android as-is once appkit publishes the change. After an upstream merge, the
+compiler catches anything that brought a call back: a new `rootView.setStatusBarColor(...)` on a
+`FragmentRootLinearLayout` won't resolve. A new `Window.setStatusBarColor` call would compile, so
+it's worth grepping for.
+
+`android.nonTransitiveRClass=false` is there because upstream code reaches recyclerview resources
+through `me.grishka.appkit.R`. The published AAR was built with transitive R classes, and a source
+build has to match.
 
 ### Versioning
 

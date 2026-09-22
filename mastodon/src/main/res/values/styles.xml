@@ -74,8 +74,8 @@
 		<item name="colorRichTextContainer">@color/ext_rich_text_container_light</item>
 		<item name="colorRichTextDecorations">@color/ext_rich_text_decoration_light</item>
 
-		<item name="android:statusBarColor">?colorM3Background</item>
-		<item name="android:navigationBarColor">@color/navigation_bar_bg_light</item>
+		<item name="appkitStatusBarColor">?colorM3Background</item>
+		<item name="appkitNavigationBarColor">@color/navigation_bar_bg_light</item>
 		<item name="android:colorAccent">?colorM3Primary</item>
 		<item name="android:colorControlHighlight">@color/m3_on_surface_overlay</item>
 		<item name="colorSensitiveOverlay">#a6ffffff</item>
@@ -166,8 +166,8 @@
 		<item name="colorRichTextContainer">@color/ext_rich_text_container_dark</item>
 		<item name="colorRichTextDecorations">@color/ext_rich_text_decoration_dark</item>
 
-		<item name="android:statusBarColor">?colorM3Background</item>
-		<item name="android:navigationBarColor">?colorM3Background</item>
+		<item name="appkitStatusBarColor">?colorM3Background</item>
+		<item name="appkitNavigationBarColor">?colorM3Background</item>
 		<item name="android:colorAccent">?colorM3Primary</item>
 		<item name="android:colorControlHighlight">@color/m3_on_surface_overlay</item>
 		<item name="colorSensitiveOverlay">#80000000</item>
@@ -494,6 +494,22 @@
 		<item name="android:background">@drawable/bg_spinner</item>
 		<item name="android:backgroundTint">?colorM3OnSurface</item>
 		<item name="android:popupElevation">3dp</item>
+	</style>
+
+	<!-- Full-screen dialogs that draw behind the system bars themselves. The bar colors are set
+	     here because Window.setStatusBarColor/setNavigationBarColor are deprecated from API 35.
+	     The rest mirrors the platform's Theme.DeviceDefault.Dialog.NoFrame, which is private. -->
+	<style name="Theme.Mastodon.Dialog.NoFrame.TransparentSystemBars" parent="android:Theme.DeviceDefault.Dialog">
+		<item name="android:windowBackground">@android:color/transparent</item>
+		<item name="android:windowFrame">@null</item>
+		<item name="android:windowContentOverlay">@null</item>
+		<item name="android:windowAnimationStyle">@null</item>
+		<item name="android:backgroundDimEnabled">false</item>
+		<item name="android:windowIsTranslucent">true</item>
+		<item name="android:windowNoTitle">true</item>
+		<item name="android:windowCloseOnTouchOutside">false</item>
+		<item name="android:statusBarColor">@android:color/transparent</item>
+		<item name="android:navigationBarColor">@android:color/transparent</item>
 	</style>
 
 	<style name="Theme.Mastodon.Dialog.Alert" parent="android:Theme.Material.Light.Dialog.Alert">

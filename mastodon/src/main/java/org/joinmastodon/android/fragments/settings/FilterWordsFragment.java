@@ -216,7 +216,7 @@ public class FilterWordsFragment extends BaseSettingsFragment<FilterKeyword>{
 			return;
 		V.setVisibilityAnimated(fab, View.GONE);
 
-		actionMode=ActionModeHelper.startActionMode(this, ()->elevationOnScrollListener.getCurrentStatusBarColor(), new ActionMode.Callback(){
+		actionMode=ActionModeHelper.startActionMode(this, elevationOnScrollListener, new ActionMode.Callback(){
 			@Override
 			public boolean onCreateActionMode(ActionMode mode, Menu menu){
 				return true;

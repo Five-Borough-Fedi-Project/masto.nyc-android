@@ -1,0 +1,264 @@
+{
+    "logs": [
+        {
+            "outputFile": "me.grishka.appkit-release-5:/values/values.xml",
+            "map": [
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/dimens.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "1",
+                        "startOffsets": "52",
+                        "endColumns": "62",
+                        "endOffsets": "113"
+                    },
+                    "to": {
+                        "startLines": "22",
+                        "startColumns": "4",
+                        "startOffsets": "1308",
+                        "endColumns": "65",
+                        "endOffsets": "1369"
+                    }
+                },
+                {
+                    "source": "/home/seano/.gradle/caches/8.13/transforms/827da36578beb6b0b5beb1760980e818/transformed/recyclerview-1.2.1.1/res/values/values.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,111,170,218,274,349,425,497,563",
+                        "endLines": "2,3,4,5,6,7,8,9,38",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "106,165,213,269,344,420,492,558,2084"
+                    },
+                    "to": {
+                        "startLines": "15,16,17,18,19,20,21,26,70",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "866,922,981,1029,1085,1160,1236,1489,4149",
+                        "endLines": "15,16,17,18,19,20,21,26,90",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "917,976,1024,1080,1155,1231,1303,1550,4984"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/ids.xml",
+                    "from": {
+                        "startLines": "5,7,8,6,3,2,4",
+                        "startColumns": "1,1,1,1,1,1,1",
+                        "startOffsets": "190,258,290,224,98,52,144",
+                        "endColumns": "33,31,39,33,45,45,45",
+                        "endOffsets": "222,288,328,256,142,96,188"
+                    },
+                    "to": {
+                        "startLines": "23,24,25,27,28,29,30",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "1374,1411,1446,1555,1592,1641,1690",
+                        "endColumns": "36,34,42,36,48,48,48",
+                        "endOffsets": "1406,1441,1484,1587,1636,1685,1734"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/strings.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "1",
+                        "startOffsets": "13",
+                        "endColumns": "54",
+                        "endOffsets": "66"
+                    },
+                    "to": {
+                        "startLines": "31",
+                        "startColumns": "4",
+                        "startOffsets": "1739",
+                        "endColumns": "57",
+                        "endOffsets": "1792"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/themes.xml",
+                    "from": {
+                        "startLines": "3,23",
+                        "startColumns": "1,1",
+                        "startOffsets": "54,1222",
+                        "endLines": "21,41",
+                        "endColumns": "9,9",
+                        "endOffsets": "1219,2399"
+                    },
+                    "to": {
+                        "startLines": "32,51",
+                        "startColumns": "4,4",
+                        "startOffsets": "1797,2967",
+                        "endLines": "50,69",
+                        "endColumns": "9,9",
+                        "endOffsets": "2962,4144"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/attrs.xml",
+                    "from": {
+                        "startLines": "12,9,7,4,5,6,16,8,15,11,10,3,2",
+                        "startColumns": "1,1,1,1,1,1,1,1,1,1,1,1,1",
+                        "startOffsets": "637,460,331,154,212,273,939,396,877,572,514,103,52",
+                        "endColumns": "58,53,64,57,60,57,65,63,61,64,57,50,50",
+                        "endOffsets": "694,512,394,210,271,329,1003,458,937,635,570,152,101"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,117,174,242,303,367,428,497,564,629,697,758,812",
+                        "endColumns": "61,56,67,60,63,60,68,66,64,67,60,53,53",
+                        "endOffsets": "112,169,237,298,362,423,492,559,624,692,753,807,861"
+                    }
+                },
+                {
+                    "source": "/home/seano/.gradle/caches/8.13/transforms/843e46b291903ef7493913d99cab77b1/transformed/swiperefreshlayout-1.1.0.1/res/values/values.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "24",
+                        "endOffsets": "287"
+                    },
+                    "to": {
+                        "startLines": "91",
+                        "startColumns": "4",
+                        "startOffsets": "4989",
+                        "endLines": "94",
+                        "endColumns": "24",
+                        "endOffsets": "5155"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "me.grishka.appkit-mergeReleaseResources-3:/values/values.xml",
+            "map": [
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/dimens.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "1",
+                        "startOffsets": "52",
+                        "endColumns": "62",
+                        "endOffsets": "113"
+                    },
+                    "to": {
+                        "startLines": "22",
+                        "startColumns": "4",
+                        "startOffsets": "1308",
+                        "endColumns": "65",
+                        "endOffsets": "1369"
+                    }
+                },
+                {
+                    "source": "/home/seano/.gradle/caches/8.13/transforms/827da36578beb6b0b5beb1760980e818/transformed/recyclerview-1.2.1.1/res/values/values.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,111,170,218,274,349,425,497,563",
+                        "endLines": "2,3,4,5,6,7,8,9,38",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "106,165,213,269,344,420,492,558,2084"
+                    },
+                    "to": {
+                        "startLines": "15,16,17,18,19,20,21,26,70",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "866,922,981,1029,1085,1160,1236,1489,4149",
+                        "endLines": "15,16,17,18,19,20,21,26,90",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "917,976,1024,1080,1155,1231,1303,1550,4984"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/ids.xml",
+                    "from": {
+                        "startLines": "5,7,8,6,3,2,4",
+                        "startColumns": "1,1,1,1,1,1,1",
+                        "startOffsets": "190,258,290,224,98,52,144",
+                        "endColumns": "33,31,39,33,45,45,45",
+                        "endOffsets": "222,288,328,256,142,96,188"
+                    },
+                    "to": {
+                        "startLines": "23,24,25,27,28,29,30",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "1374,1411,1446,1555,1592,1641,1690",
+                        "endColumns": "36,34,42,36,48,48,48",
+                        "endOffsets": "1406,1441,1484,1587,1636,1685,1734"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/strings.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "1",
+                        "startOffsets": "13",
+                        "endColumns": "54",
+                        "endOffsets": "66"
+                    },
+                    "to": {
+                        "startLines": "31",
+                        "startColumns": "4",
+                        "startOffsets": "1739",
+                        "endColumns": "57",
+                        "endOffsets": "1792"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/themes.xml",
+                    "from": {
+                        "startLines": "3,23",
+                        "startColumns": "1,1",
+                        "startOffsets": "54,1222",
+                        "endLines": "21,41",
+                        "endColumns": "9,9",
+                        "endOffsets": "1219,2399"
+                    },
+                    "to": {
+                        "startLines": "32,51",
+                        "startColumns": "4,4",
+                        "startOffsets": "1797,2967",
+                        "endLines": "50,69",
+                        "endColumns": "9,9",
+                        "endOffsets": "2962,4144"
+                    }
+                },
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/attrs.xml",
+                    "from": {
+                        "startLines": "12,9,7,4,5,6,16,8,15,11,10,3,2",
+                        "startColumns": "1,1,1,1,1,1,1,1,1,1,1,1,1",
+                        "startOffsets": "637,460,331,154,212,273,939,396,877,572,514,103,52",
+                        "endColumns": "58,53,64,57,60,57,65,63,61,64,57,50,50",
+                        "endOffsets": "694,512,394,210,271,329,1003,458,937,635,570,152,101"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,117,174,242,303,367,428,497,564,629,697,758,812",
+                        "endColumns": "61,56,67,60,63,60,68,66,64,67,60,53,53",
+                        "endOffsets": "112,169,237,298,362,423,492,559,624,692,753,807,861"
+                    }
+                },
+                {
+                    "source": "/home/seano/.gradle/caches/8.13/transforms/843e46b291903ef7493913d99cab77b1/transformed/swiperefreshlayout-1.1.0.1/res/values/values.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "24",
+                        "endOffsets": "287"
+                    },
+                    "to": {
+                        "startLines": "91",
+                        "startColumns": "4",
+                        "startOffsets": "4989",
+                        "endLines": "94",
+                        "endColumns": "24",
+                        "endOffsets": "5155"
+                    }
+                }
+            ]
+        }
+    ]
+}

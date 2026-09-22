@@ -1,7 +1,6 @@
 package org.joinmastodon.android.ui.utils;
 
 import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.IntEvaluator;
 import android.animation.ObjectAnimator;
 import android.graphics.drawable.Drawable;
@@ -12,21 +11,25 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import org.joinmastodon.android.R;
-
-import java.util.function.IntSupplier;
+import org.joinmastodon.android.utils.ElevationOnScrollListener;
 
 import me.grishka.appkit.FragmentStackActivity;
 import me.grishka.appkit.fragments.AppKitFragment;
+import me.grishka.appkit.views.FragmentRootLinearLayout;
 
 public class ActionModeHelper{
-	public static ActionMode startActionMode(AppKitFragment fragment, IntSupplier statusBarColorSupplier, ActionMode.Callback callback){
+	public static ActionMode startActionMode(AppKitFragment fragment, ElevationOnScrollListener elevationOnScrollListener, ActionMode.Callback callback){
 		FragmentStackActivity activity=(FragmentStackActivity) fragment.getActivity();
+		// Tint the fragment's own status bar background rather than the window's status bar, which
+		// is transparent and, from API 35, can't be colored at all.
+		FragmentRootLinearLayout rootLayout=elevationOnScrollListener.getFragmentRootLayout();
+		int statusBarColorBeforeActionMode=rootLayout.getStatusBarBackgroundColor();
 		return activity.startActionMode(new ActionMode.Callback(){
 			@Override
 			public boolean onCreateActionMode(ActionMode mode, Menu menu){
 				if(!callback.onCreateActionMode(mode, menu))
 					return false;
-				ObjectAnimator anim=ObjectAnimator.ofInt(activity.getWindow(), "statusBarColor", statusBarColorSupplier.getAsInt(), UiUtils.getThemeColor(activity, R.attr.colorM3Primary));
+				ObjectAnimator anim=ObjectAnimator.ofInt(rootLayout, "statusBarBackgroundColor", statusBarColorBeforeActionMode, UiUtils.getThemeColor(activity, R.attr.colorM3Primary));
 				anim.setEvaluator(new IntEvaluator(){
 					@Override
 					public Integer evaluate(float fraction, Integer startValue, Integer endValue){
@@ -67,17 +70,11 @@ public class ActionModeHelper{
 
 			@Override
 			public void onDestroyActionMode(ActionMode mode){
-				ObjectAnimator anim=ObjectAnimator.ofInt(activity.getWindow(), "statusBarColor", UiUtils.getThemeColor(activity, R.attr.colorM3Primary), statusBarColorSupplier.getAsInt());
+				ObjectAnimator anim=ObjectAnimator.ofInt(rootLayout, "statusBarBackgroundColor", UiUtils.getThemeColor(activity, R.attr.colorM3Primary), statusBarColorBeforeActionMode);
 				anim.setEvaluator(new IntEvaluator(){
 					@Override
 					public Integer evaluate(float fraction, Integer startValue, Integer endValue){
 						return UiUtils.alphaBlendColors(startValue, endValue, fraction);
-					}
-				});
-				anim.addListener(new AnimatorListenerAdapter(){
-					@Override
-					public void onAnimationEnd(Animator animation){
-						activity.getWindow().setStatusBarColor(0);
 					}
 				});
 				anim.start();

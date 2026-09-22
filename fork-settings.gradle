@@ -1,0 +1,6 @@
+// Settings-level additions for this fork, applied by one line at the bottom of settings.gradle for
+// the same reason mastodon/fork.gradle exists: keep upstream's file almost untouched.
+
+// Patched appkit, see third_party/appkit/README.md.
+include ':appkit'
+project(':appkit').projectDir = file('third_party/appkit')

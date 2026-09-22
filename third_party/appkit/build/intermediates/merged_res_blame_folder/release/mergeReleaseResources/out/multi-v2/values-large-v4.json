@@ -1,0 +1,48 @@
+{
+    "logs": [
+        {
+            "outputFile": "me.grishka.appkit-release-5:/values-large-v4/values-large-v4.xml",
+            "map": [
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values-large/dimens.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "1",
+                        "startOffsets": "52",
+                        "endColumns": "62",
+                        "endOffsets": "113"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "me.grishka.appkit-mergeReleaseResources-3:/values-large-v4/values-large-v4.xml",
+            "map": [
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values-large/dimens.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "1",
+                        "startOffsets": "52",
+                        "endColumns": "62",
+                        "endOffsets": "113"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                }
+            ]
+        }
+    ]
+}
