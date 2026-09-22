@@ -47,6 +47,7 @@ Conflicts should be confined to the files below.
 | `mastodon/src/main/res/values/strings.xml` | `app_name`, `settings_contribute`, `settings_app_version`, `local_timeline_info_banner` |
 | `mastodon/src/main/res/values/urls.xml` | `github_url`, `privacy_policy_url` |
 | `mastodon/src/main/res/layout/fragment_splash.xml` | dropped the server picker and the "Learn more" sheet |
+| `.../fragments/profile/ProfileQrCodeFragment.java`, `res/layout/fragment_profile_qr.xml` | no portrait lock; the code is sized to fit landscape |
 | `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
 | `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
