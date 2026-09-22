@@ -43,6 +43,8 @@ Conflicts should be confined to the files below.
 | File | Change |
 | --- | --- |
 | `mastodon/build.gradle` | one line at the end: `apply from: 'fork.gradle'` |
+| `build.gradle`, `gradle/wrapper/gradle-wrapper.properties` | AGP 9.4.0 and Gradle 9.7.1, ahead of upstream's 8.13 |
+| `gradle.properties` | opts out of AGP 9's built-in Kotlin and tested-build-type-only unit tests |
 | `mastodon/src/main/AndroidManifest.xml` | deep links point at `masto.nyc` |
 | `mastodon/src/main/res/values/strings.xml` | `app_name`, `settings_contribute`, `settings_app_version`, `local_timeline_info_banner` |
 | `mastodon/src/main/res/values/urls.xml` | `github_url`, `privacy_policy_url` |
@@ -87,7 +89,7 @@ so upstream's bare `compileSdk 37` fails with:
 
     Failed to find target with hash string 'android-37' in: <sdk>
 
-AGP 8.13.2 supports `compileSdkMinor` even though upstream doesn't use it, so adding
+AGP (8.13.2 at the time) supports `compileSdkMinor` even though upstream doesn't use it, so adding
 `compileSdkMinor 0` resolves the platform to `android-37.0`. Drop the line if a future upstream
 merge fixes this another way.
 
@@ -144,8 +146,7 @@ sending upstream.
 
 ## Toolchain
 
-- JDK 21 (Temurin), matching both CI workflows. Nothing newer: the wrapper pulls Gradle 8.13, which
-  predates JDK 24 and 25.
+- JDK 21 (Temurin), matching both CI workflows. The wrapper pulls Gradle 9.7.1 for AGP 9.4.0.
 - Android SDK Platform 37.0. Note the `.0`, per above.
 - AGP downloads Build-Tools itself once SDK licences are accepted, so there's no version to pin.
 - `local.properties` (gitignored) needs `sdk.dir=<path to SDK>`.

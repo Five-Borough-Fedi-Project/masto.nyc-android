@@ -16,7 +16,7 @@ Having to pick a server before you can sign up puts a lot of people off, so this
 
 You need JDK 21 and Android SDK Platform 37.0.
 
-Don't reach for a newer JDK. The Gradle wrapper pulls Gradle 8.13, which predates JDK 24 and 25, and CI pins 21 as well.
+Use JDK 21, which CI pins too. The Gradle wrapper pulls Gradle 9.7.1.
 
 Mind the `.0` on the platform. Google stopped publishing a bare `android-37`, so `sdkmanager "platforms;android-37"` fails, and it takes the rest of its arguments down with it.
 
