@@ -153,6 +153,27 @@ sending upstream.
 Masto NYC. It's been installed and used on a physical device, not just compiled: splash, signup,
 email activation polling and branding all check out.
 
+## Edge-to-edge
+
+Play Console says "Edge-to-edge may not display for all users" and suggests calling
+`enableEdgeToEdge()`. The app already draws edge-to-edge on every version it supports, so there is
+nothing to call.
+
+appkit's `FragmentStackActivity.onCreate` sets `SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN`,
+`LAYOUT_HIDE_NAVIGATION` and `LAYOUT_STABLE` and makes the bars transparent, on every API level.
+Fragments receive the insets themselves: `FragmentRootLinearLayout.onApplyWindowInsets` pads by the
+system window insets and paints the bar colors into the padding. Google's suggested
+`EdgeToEdge.enable()` takes an AndroidX `ComponentActivity`, and these activities extend
+`android.app.Activity` through appkit, so it doesn't apply.
+
+Checked on Android 14 and 15 emulators, gesture and 3-button navigation, portrait and both
+landscape rotations, with a display cutout emulated: no clipped content, bars padded correctly,
+and the compose screen resizes for the keyboard. Android 14 matters because it's the version where
+edge-to-edge isn't enforced, so a regression would show up there first.
+
+Worth re-checking after an upstream merge that touches window insets, and on a device with a
+cutout in landscape, where the cutout mode from API 35 is `ALWAYS` rather than `SHORT_EDGES`.
+
 ## Artwork
 
 Upstream's license notice requires a redistributed fork to use its own name and icon, so the
