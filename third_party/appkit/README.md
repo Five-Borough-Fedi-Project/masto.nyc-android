@@ -49,12 +49,20 @@ Once appkit publishes a version with the change and upstream Mastodon depends on
 
 ## Updating appkit
 
+From the repo root:
+
 ```bash
-git clone https://github.com/grishka/appkit && cd appkit
-git checkout <new commit>
-git am <this repo>/third_party/appkit/patches/*.patch
-rm -rf <this repo>/third_party/appkit/src && cp -r appkit/src <this repo>/third_party/appkit/
+third_party/appkit/revendor.sh
 ```
 
-Then take out the manifest's `package` attribute again, and check the dependencies in `build.gradle`
-still match appkit's.
+It reads the version `mastodon/build.gradle` asks for, finds the appkit commit declaring it (appkit
+publishes no tags, so the version in its own `build.gradle` is the marker), applies `patches/`,
+copies the sources in, and updates `vendored-version.txt`. Pass a version to override, e.g.
+`revendor.sh 1.5.4`. Then review the diff, build, and commit.
+
+If the patches no longer apply, it stops and leaves the clone in place so you can resolve there,
+re-export with `git format-patch`, and re-run. Re-running with no change to the version reproduces
+the current tree byte for byte, which is a cheap way to check the script still works.
+
+One thing it doesn't do: the dependencies in this directory's `build.gradle` are a hand-copy of
+appkit's. If appkit changes its own, mirror that by hand.
