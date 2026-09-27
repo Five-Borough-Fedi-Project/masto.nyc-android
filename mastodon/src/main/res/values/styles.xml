@@ -501,8 +501,7 @@
 	     The rest mirrors the platform's Theme.DeviceDefault.Dialog.NoFrame, which is private. -->
 	<style name="Theme.Mastodon.Dialog.NoFrame.TransparentSystemBars" parent="android:Theme.DeviceDefault.Dialog">
 		<item name="android:windowBackground">@android:color/transparent</item>
-		<item name="android:windowFrame">@null</item>
-		<item name="android:windowContentOverlay">@null</item>
+		<item name="android:windowElevation">0dp</item>
 		<item name="android:windowAnimationStyle">@null</item>
 		<item name="android:backgroundDimEnabled">false</item>
 		<item name="android:windowIsTranslucent">true</item>

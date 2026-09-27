@@ -86,6 +86,12 @@ jobs:
             echo "::error::a deprecated Window system bar color call is back - see FORK.md#patched-appkit"
             exit 1
           fi
+          # ObjectAnimator resolves property names by reflection, so an animator using the old
+          # FragmentRootLinearLayout property names compiles and then throws at runtime.
+          if grep -rnE '"(status|navigation)BarColor"' mastodon/src third_party/appkit/src; then
+            echo "::error::an ObjectAnimator is using an old system bar color property name"
+            exit 1
+          fi
 
       - name: Assert the built APK is actually ours
         run: |

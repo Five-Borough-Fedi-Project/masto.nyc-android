@@ -1,6 +1,7 @@
 package org.joinmastodon.android.ui.utils;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.IntEvaluator;
 import android.animation.ObjectAnimator;
 import android.graphics.drawable.Drawable;
@@ -18,25 +19,41 @@ import me.grishka.appkit.fragments.AppKitFragment;
 import me.grishka.appkit.views.FragmentRootLinearLayout;
 
 public class ActionModeHelper{
+	private static void startColorAnim(FragmentRootLinearLayout rootLayout, int from, int to, Runnable onEnd){
+		ObjectAnimator anim=ObjectAnimator.ofInt(rootLayout, "statusBarBackgroundColor", from, to);
+		anim.setEvaluator(new IntEvaluator(){
+			@Override
+			public Integer evaluate(float fraction, Integer startValue, Integer endValue){
+				return UiUtils.alphaBlendColors(startValue, endValue, fraction);
+			}
+		});
+		if(onEnd!=null){
+			anim.addListener(new AnimatorListenerAdapter(){
+				@Override
+				public void onAnimationEnd(Animator animation){
+					onEnd.run();
+				}
+			});
+		}
+		anim.start();
+	}
+
 	public static ActionMode startActionMode(AppKitFragment fragment, ElevationOnScrollListener elevationOnScrollListener, ActionMode.Callback callback){
 		FragmentStackActivity activity=(FragmentStackActivity) fragment.getActivity();
 		// Tint the fragment's own status bar background rather than the window's status bar, which
-		// is transparent and, from API 35, can't be colored at all.
+		// is transparent and, from API 35, can't be colored at all. Scrolling animates the same
+		// property, so it is suppressed for as long as action mode owns the color. Fragments that
+		// pass no root layout (see InstanceCatalogSignupFragment) just don't get the tint.
 		FragmentRootLinearLayout rootLayout=elevationOnScrollListener.getFragmentRootLayout();
-		int statusBarColorBeforeActionMode=rootLayout.getStatusBarBackgroundColor();
 		return activity.startActionMode(new ActionMode.Callback(){
 			@Override
 			public boolean onCreateActionMode(ActionMode mode, Menu menu){
 				if(!callback.onCreateActionMode(mode, menu))
 					return false;
-				ObjectAnimator anim=ObjectAnimator.ofInt(rootLayout, "statusBarBackgroundColor", statusBarColorBeforeActionMode, UiUtils.getThemeColor(activity, R.attr.colorM3Primary));
-				anim.setEvaluator(new IntEvaluator(){
-					@Override
-					public Integer evaluate(float fraction, Integer startValue, Integer endValue){
-						return UiUtils.alphaBlendColors(startValue, endValue, fraction);
-					}
-				});
-				anim.start();
+				if(rootLayout!=null){
+					elevationOnScrollListener.setStatusBarColorSuppressed(true);
+					startColorAnim(rootLayout, rootLayout.getStatusBarBackgroundColor(), UiUtils.getThemeColor(activity, R.attr.colorM3Primary), null);
+				}
 				activity.invalidateSystemBarColors(fragment);
 				View fakeView=new View(activity);
 //				mode.setCustomView(fakeView);
@@ -70,14 +87,13 @@ public class ActionModeHelper{
 
 			@Override
 			public void onDestroyActionMode(ActionMode mode){
-				ObjectAnimator anim=ObjectAnimator.ofInt(rootLayout, "statusBarBackgroundColor", UiUtils.getThemeColor(activity, R.attr.colorM3Primary), statusBarColorBeforeActionMode);
-				anim.setEvaluator(new IntEvaluator(){
-					@Override
-					public Integer evaluate(float fraction, Integer startValue, Integer endValue){
-						return UiUtils.alphaBlendColors(startValue, endValue, fraction);
-					}
-				});
-				anim.start();
+				if(rootLayout!=null){
+					// Back to whatever the current scroll position calls for, which may have changed
+					// while action mode was up, then hand the color back to the scroll listener.
+					startColorAnim(rootLayout, UiUtils.getThemeColor(activity, R.attr.colorM3Primary),
+							elevationOnScrollListener.getCurrentStatusBarColor(),
+							()->elevationOnScrollListener.setStatusBarColorSuppressed(false));
+				}
 				activity.invalidateSystemBarColors(fragment);
 				callback.onDestroyActionMode(mode);
 			}
