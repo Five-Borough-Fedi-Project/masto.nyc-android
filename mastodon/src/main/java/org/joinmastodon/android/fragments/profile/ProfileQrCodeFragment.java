@@ -12,9 +12,7 @@ import android.app.DownloadManager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -75,7 +73,6 @@ import org.joinmastodon.android.ui.Snackbar;
 import org.joinmastodon.android.ui.drawables.FancyQrCodeDrawable;
 import org.joinmastodon.android.ui.drawables.RadialParticleSystemDrawable;
 import org.joinmastodon.android.ui.utils.UiUtils;
-import org.joinmastodon.android.ui.views.FixedAspectRatioFrameLayout;
 import org.parceler.Parcels;
 
 import java.io.File;
@@ -142,9 +139,6 @@ public class ProfileQrCodeFragment extends AppKitFragment{
 			lp.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 		}
 		dlg.getWindow().setAttributes(lp);
-		if(!isTablet){
-			getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		}
 		if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU){
 			dlg.getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::dismiss);
 		}else{
@@ -155,14 +149,6 @@ public class ProfileQrCodeFragment extends AppKitFragment{
 				return true;
 			});
 		}
-	}
-
-	@Override
-	public void onDismiss(DialogInterface dialog){
-		super.onDismiss(dialog);
-		Activity activity=getActivity();
-		if(activity!=null)
-			activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 	}
 
 	@Override
@@ -468,13 +454,15 @@ public class ProfileQrCodeFragment extends AppKitFragment{
 
 		@Override
 		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec){
+			// The code is a square as wide as this layout, so narrowing the layout is what keeps it on
+			// screen. Cap it at 400dp, and in landscape at whatever height is left once the buttons
+			// row below (40dp tall, 24dp top margin) has its share.
 			int maxW=dp(400);
-			FixedAspectRatioFrameLayout aspectLayout=(FixedAspectRatioFrameLayout) getChildAt(0);
+			if(MeasureSpec.getMode(heightMeasureSpec)!=MeasureSpec.UNSPECIFIED){
+				maxW=Math.min(maxW, MeasureSpec.getSize(heightMeasureSpec)-dp(64));
+			}
 			if(MeasureSpec.getSize(widthMeasureSpec)>maxW){
 				widthMeasureSpec=MeasureSpec.getMode(widthMeasureSpec) | maxW;
-				aspectLayout.setUseHeight(MeasureSpec.getSize(heightMeasureSpec)<dp(464));
-			}else{
-				aspectLayout.setUseHeight(false);
 			}
 			super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 		}

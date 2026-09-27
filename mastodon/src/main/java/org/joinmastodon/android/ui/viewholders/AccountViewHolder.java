@@ -81,6 +81,8 @@ public class AccountViewHolder extends BindableViewHolder<AccountViewModel> impl
 	private boolean showBio;
 	private boolean checked;
 
+	public String followReferrer;
+
 	public AccountViewHolder(Fragment fragment, ViewGroup list, Map<String, Relationship> relationships){
 		this(fragment, list, relationships, R.layout.item_account_list);
 	}
@@ -208,6 +210,8 @@ public class AccountViewHolder extends BindableViewHolder<AccountViewModel> impl
 		Bundle args=new Bundle();
 		args.putString("account", accountID);
 		args.putParcelable("profileAccount", Parcels.wrap(item.account));
+		if(followReferrer!=null)
+			args.putString("followReferrer", followReferrer);
 		Nav.go(fragment.getActivity(), ProfileFragment.class, args);
 	}
 
@@ -236,7 +240,7 @@ public class AccountViewHolder extends BindableViewHolder<AccountViewModel> impl
 			itemView.setHasTransientState(false);
 			relationships.put(item.account.id, rel);
 			bindRelationship();
-		});
+		}, followReferrer);
 	}
 
 	public void setActionProgressVisible(boolean visible){
@@ -274,7 +278,7 @@ public class AccountViewHolder extends BindableViewHolder<AccountViewModel> impl
 				updateRelationship(relationship);
 			}, this::updateRelationship);
 		}else if(id==R.id.hide_boosts){
-			new SetAccountFollowed(account.id, true, !relationship.showingReblogs, relationship.notifying)
+			new SetAccountFollowed(account.id, true, !relationship.showingReblogs, relationship.notifying, null)
 					.setCallback(new Callback<>(){
 						@Override
 						public void onSuccess(Relationship result){

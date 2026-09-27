@@ -43,10 +43,13 @@ Conflicts should be confined to the files below.
 | File | Change |
 | --- | --- |
 | `mastodon/build.gradle` | one line at the end: `apply from: 'fork.gradle'` |
+| `build.gradle`, `gradle/wrapper/gradle-wrapper.properties` | AGP 9.4.0 and Gradle 9.7.1, ahead of upstream's 8.13 |
+| `gradle.properties` | opts out of AGP 9's built-in Kotlin and tested-build-type-only unit tests |
 | `mastodon/src/main/AndroidManifest.xml` | deep links point at `masto.nyc` |
 | `mastodon/src/main/res/values/strings.xml` | `app_name`, `settings_contribute`, `settings_app_version`, `local_timeline_info_banner` |
 | `mastodon/src/main/res/values/urls.xml` | `github_url`, `privacy_policy_url` |
 | `mastodon/src/main/res/layout/fragment_splash.xml` | dropped the server picker and the "Learn more" sheet |
+| `.../fragments/profile/ProfileQrCodeFragment.java`, `res/layout/fragment_profile_qr.xml` | no portrait lock; the code is sized to fit landscape |
 | `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
 | `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
@@ -89,7 +92,7 @@ so upstream's bare `compileSdk 37` fails with:
 
     Failed to find target with hash string 'android-37' in: <sdk>
 
-AGP 8.13.2 supports `compileSdkMinor` even though upstream doesn't use it, so adding
+AGP (8.13.2 at the time) supports `compileSdkMinor` even though upstream doesn't use it, so adding
 `compileSdkMinor 0` resolves the platform to `android-37.0`. Drop the line if a future upstream
 merge fixes this another way.
 
@@ -164,8 +167,7 @@ sending upstream.
 
 ## Toolchain
 
-- JDK 21 (Temurin), matching both CI workflows. Nothing newer: the wrapper pulls Gradle 8.13, which
-  predates JDK 24 and 25.
+- JDK 21 (Temurin), matching both CI workflows. The wrapper pulls Gradle 9.7.1 for AGP 9.4.0.
 - Android SDK Platform 37.0. Note the `.0`, per above.
 - AGP downloads Build-Tools itself once SDK licences are accepted, so there's no version to pin.
 - `local.properties` (gitignored) needs `sdk.dir=<path to SDK>`.
@@ -173,6 +175,27 @@ sending upstream.
 `./gradlew assembleDebug` produces a 7.2 MB APK with package `nyc.masto.android` and label
 Masto NYC. It's been installed and used on a physical device, not just compiled: splash, signup,
 email activation polling and branding all check out.
+
+## Edge-to-edge
+
+Play Console says "Edge-to-edge may not display for all users" and suggests calling
+`enableEdgeToEdge()`. The app already draws edge-to-edge on every version it supports, so there is
+nothing to call.
+
+appkit's `FragmentStackActivity.onCreate` sets `SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN`,
+`LAYOUT_HIDE_NAVIGATION` and `LAYOUT_STABLE` and makes the bars transparent, on every API level.
+Fragments receive the insets themselves: `FragmentRootLinearLayout.onApplyWindowInsets` pads by the
+system window insets and paints the bar colors into the padding. Google's suggested
+`EdgeToEdge.enable()` takes an AndroidX `ComponentActivity`, and these activities extend
+`android.app.Activity` through appkit, so it doesn't apply.
+
+Checked on Android 14 and 15 emulators, gesture and 3-button navigation, portrait and both
+landscape rotations, with a display cutout emulated: no clipped content, bars padded correctly,
+and the compose screen resizes for the keyboard. Android 14 matters because it's the version where
+edge-to-edge isn't enforced, so a regression would show up there first.
+
+Worth re-checking after an upstream merge that touches window insets, and on a device with a
+cutout in landscape, where the cutout mode from API 35 is `ALWAYS` rather than `SHORT_EDGES`.
 
 ## Artwork
 
