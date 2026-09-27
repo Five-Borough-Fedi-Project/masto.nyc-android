@@ -76,6 +76,17 @@ jobs:
           fi
           exit $fail
 
+      - name: Assert no deprecated system bar color calls came back
+        run: |
+          set -euo pipefail
+          # Window.setStatusBarColor and setNavigationBarColor do nothing from API 35 and Play
+          # Console flags them. An upstream merge can add a call back without breaking the build,
+          # unlike the renamed FragmentRootLinearLayout methods, which stop compiling.
+          if grep -rnE '\.set(Status|Navigation)BarColor\(' mastodon/src third_party/appkit/src; then
+            echo "::error::a deprecated Window system bar color call is back - see FORK.md#patched-appkit"
+            exit 1
+          fi
+
       - name: Assert the built APK is actually ours
         run: |
           set -euo pipefail

@@ -24,6 +24,20 @@ The app side of the change lives in upstream Mastodon files, so it merges like a
 a separate commit on the same branch, written to apply to mastodon/mastodon-android unchanged once
 it depends on an appkit release that has the patch.
 
+## Staying in sync
+
+`mastodon/fork.gradle` compares the version in `vendored-version.txt` with the appkit version
+`mastodon/build.gradle` asks for, and fails the build when they differ. Substitution ignores the
+declared version, so without that check an upstream appkit bump would quietly do nothing and this
+fork would keep building 1.5.3's source. CI also greps for `Window.setStatusBarColor` and
+`setNavigationBarColor` coming back, which the compiler can't catch.
+
+When an upstream merge bumps appkit, the build fails and you pick one:
+
+- appkit's release has the patch: delete this directory, per below.
+- it doesn't: re-vendor onto the new version, per "Updating appkit" below, and update
+  `vendored-version.txt`.
+
 ## Removing this
 
 Once appkit publishes a version with the change and upstream Mastodon depends on it:

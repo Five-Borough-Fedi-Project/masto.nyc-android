@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "me.grishka.appkit-release-5:/values/values.xml",
+            "outputFile": "me.grishka.appkit-release-4:/values/values.xml",
             "map": [
                 {
                     "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/dimens.xml",
@@ -21,22 +21,22 @@
                     }
                 },
                 {
-                    "source": "/home/seano/.gradle/caches/8.13/transforms/827da36578beb6b0b5beb1760980e818/transformed/recyclerview-1.2.1.1/res/values/values.xml",
+                    "source": "/home/seano/.gradle/caches/9.7.1/transforms/b63b1cd5493d65bbc4ee5f8d899157bb/transformed/swiperefreshlayout-1.1.0.1/res/values/values.xml",
                     "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10",
-                        "startColumns": "4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,111,170,218,274,349,425,497,563",
-                        "endLines": "2,3,4,5,6,7,8,9,38",
-                        "endColumns": "55,58,47,55,74,75,71,65,24",
-                        "endOffsets": "106,165,213,269,344,420,492,558,2084"
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "24",
+                        "endOffsets": "287"
                     },
                     "to": {
-                        "startLines": "15,16,17,18,19,20,21,26,70",
-                        "startColumns": "4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "866,922,981,1029,1085,1160,1236,1489,4149",
-                        "endLines": "15,16,17,18,19,20,21,26,90",
-                        "endColumns": "55,58,47,55,74,75,71,65,24",
-                        "endOffsets": "917,976,1024,1080,1155,1231,1303,1550,4984"
+                        "startLines": "91",
+                        "startColumns": "4",
+                        "startOffsets": "4989",
+                        "endLines": "94",
+                        "endColumns": "24",
+                        "endOffsets": "5155"
                     }
                 },
                 {
@@ -110,28 +110,28 @@
                     }
                 },
                 {
-                    "source": "/home/seano/.gradle/caches/8.13/transforms/843e46b291903ef7493913d99cab77b1/transformed/swiperefreshlayout-1.1.0.1/res/values/values.xml",
+                    "source": "/home/seano/.gradle/caches/9.7.1/transforms/0c32d41c46ceb73006c6f7114e3ef07a/transformed/recyclerview-1.2.1.1/res/values/values.xml",
                     "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "55",
-                        "endLines": "5",
-                        "endColumns": "24",
-                        "endOffsets": "287"
+                        "startLines": "2,3,4,5,6,7,8,9,10",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,111,170,218,274,349,425,497,563",
+                        "endLines": "2,3,4,5,6,7,8,9,38",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "106,165,213,269,344,420,492,558,2084"
                     },
                     "to": {
-                        "startLines": "91",
-                        "startColumns": "4",
-                        "startOffsets": "4989",
-                        "endLines": "94",
-                        "endColumns": "24",
-                        "endOffsets": "5155"
+                        "startLines": "15,16,17,18,19,20,21,26,70",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "866,922,981,1029,1085,1160,1236,1489,4149",
+                        "endLines": "15,16,17,18,19,20,21,26,90",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "917,976,1024,1080,1155,1231,1303,1550,4984"
                     }
                 }
             ]
         },
         {
-            "outputFile": "me.grishka.appkit-mergeReleaseResources-3:/values/values.xml",
+            "outputFile": "me.grishka.appkit-mergeReleaseResources-2:/values/values.xml",
             "map": [
                 {
                     "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values/dimens.xml",
@@ -151,22 +151,22 @@
                     }
                 },
                 {
-                    "source": "/home/seano/.gradle/caches/8.13/transforms/827da36578beb6b0b5beb1760980e818/transformed/recyclerview-1.2.1.1/res/values/values.xml",
+                    "source": "/home/seano/.gradle/caches/9.7.1/transforms/b63b1cd5493d65bbc4ee5f8d899157bb/transformed/swiperefreshlayout-1.1.0.1/res/values/values.xml",
                     "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10",
-                        "startColumns": "4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,111,170,218,274,349,425,497,563",
-                        "endLines": "2,3,4,5,6,7,8,9,38",
-                        "endColumns": "55,58,47,55,74,75,71,65,24",
-                        "endOffsets": "106,165,213,269,344,420,492,558,2084"
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "24",
+                        "endOffsets": "287"
                     },
                     "to": {
-                        "startLines": "15,16,17,18,19,20,21,26,70",
-                        "startColumns": "4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "866,922,981,1029,1085,1160,1236,1489,4149",
-                        "endLines": "15,16,17,18,19,20,21,26,90",
-                        "endColumns": "55,58,47,55,74,75,71,65,24",
-                        "endOffsets": "917,976,1024,1080,1155,1231,1303,1550,4984"
+                        "startLines": "91",
+                        "startColumns": "4",
+                        "startOffsets": "4989",
+                        "endLines": "94",
+                        "endColumns": "24",
+                        "endOffsets": "5155"
                     }
                 },
                 {
@@ -240,22 +240,22 @@
                     }
                 },
                 {
-                    "source": "/home/seano/.gradle/caches/8.13/transforms/843e46b291903ef7493913d99cab77b1/transformed/swiperefreshlayout-1.1.0.1/res/values/values.xml",
+                    "source": "/home/seano/.gradle/caches/9.7.1/transforms/0c32d41c46ceb73006c6f7114e3ef07a/transformed/recyclerview-1.2.1.1/res/values/values.xml",
                     "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "55",
-                        "endLines": "5",
-                        "endColumns": "24",
-                        "endOffsets": "287"
+                        "startLines": "2,3,4,5,6,7,8,9,10",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,111,170,218,274,349,425,497,563",
+                        "endLines": "2,3,4,5,6,7,8,9,38",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "106,165,213,269,344,420,492,558,2084"
                     },
                     "to": {
-                        "startLines": "91",
-                        "startColumns": "4",
-                        "startOffsets": "4989",
-                        "endLines": "94",
-                        "endColumns": "24",
-                        "endOffsets": "5155"
+                        "startLines": "15,16,17,18,19,20,21,26,70",
+                        "startColumns": "4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "866,922,981,1029,1085,1160,1236,1489,4149",
+                        "endLines": "15,16,17,18,19,20,21,26,90",
+                        "endColumns": "55,58,47,55,74,75,71,65,24",
+                        "endOffsets": "917,976,1024,1080,1155,1231,1303,1550,4984"
                     }
                 }
             ]

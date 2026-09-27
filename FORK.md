@@ -134,6 +134,10 @@ compiler catches anything that brought a call back: a new `rootView.setStatusBar
 `FragmentRootLinearLayout` won't resolve. A new `Window.setStatusBarColor` call would compile, so
 it's worth grepping for.
 
+`mastodon/fork.gradle` fails the build if the vendored copy's version stops matching what
+`build.gradle` asks for, since substitution would otherwise swallow an upstream appkit bump
+silently. CI greps for the deprecated calls returning, which the compiler can't catch.
+
 `android.nonTransitiveRClass=false` is there because upstream code reaches recyclerview resources
 through `me.grishka.appkit.R`. The published AAR was built with transitive R classes, and a source
 build has to match.

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "me.grishka.appkit-release-5:/values-xlarge-v4/values-xlarge-v4.xml",
+            "outputFile": "me.grishka.appkit-release-4:/values-xlarge-v4/values-xlarge-v4.xml",
             "map": [
                 {
                     "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values-xlarge/dimens.xml",
@@ -23,7 +23,7 @@
             ]
         },
         {
-            "outputFile": "me.grishka.appkit-mergeReleaseResources-3:/values-xlarge-v4/values-xlarge-v4.xml",
+            "outputFile": "me.grishka.appkit-mergeReleaseResources-2:/values-xlarge-v4/values-xlarge-v4.xml",
             "map": [
                 {
                     "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res/values-xlarge/dimens.xml",
