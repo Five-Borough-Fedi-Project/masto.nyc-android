@@ -142,6 +142,23 @@ silently. CI greps for the deprecated calls returning, which the compiler can't 
 through `me.grishka.appkit.R`. The published AAR was built with transitive R classes, and a source
 build has to match.
 
+### Tests for all this
+
+`mastodon/src/test/java/org/joinmastodon/android/fork/` holds tests for the fork's own changes, and
+`fork.gradle` adds Robolectric for them, so upstream's `build.gradle` stays untouched:
+
+- `SystemBarColorApiTest` checks the vendored appkit still has the renamed accessors and none of
+  the flagged names. The compiler covers direct calls; this covers `ObjectAnimator`, which resolves
+  property names by reflection, where a stale name compiles and animates nothing.
+- `ThemeSystemBarColorsTest` checks every app theme leaves the window's bars transparent and gives
+  fragments a color to paint behind them, and that the QR dialog theme matches the platform's
+  private `NoFrame` theme it copies.
+- `QrCodeLayoutTest` measures the QR code screen in both orientations and checks nothing lands off
+  the bottom, which is what the portrait lock used to hide.
+
+Each was checked by reverting the fix it covers and watching it fail. What none of them cover is
+how any of it looks: the bugs found while writing this were all found by eye on emulators.
+
 ### Versioning
 
 The user-facing rule is in the README. The mechanics:

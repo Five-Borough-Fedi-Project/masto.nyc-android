@@ -23,6 +23,25 @@ android {
 	}
 }
 
+android {
+	testOptions {
+		// Robolectric needs the merged resources to resolve themes. Kept here rather than in
+		// build.gradle's testOptions block, which upstream owns.
+		unitTests.includeAndroidResources = true
+	}
+}
+
+// Robolectric reaches into JDK internals that are closed by default from JDK 17 on.
+tasks.withType(Test).configureEach {
+	jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED', '--add-opens=java.base/java.lang=ALL-UNNAMED'
+}
+
+dependencies {
+	// Fork-only test dependency: the theme and layout tests under
+	// src/test/java/org/joinmastodon/android/fork cover regressions that only show up on a device.
+	testImplementation 'org.robolectric:robolectric:4.17'
+}
+
 // Build against the patched appkit in third_party/appkit instead of the published artifact. The
 // version in build.gradle stays upstream's, so dropping this block is all it takes to go back once
 // appkit publishes the fix. See third_party/appkit/README.md.
