@@ -266,7 +266,7 @@ public class ListMembersFragment extends PaginatedAccountListFragment implements
 		inSelectionMode=true;
 		updateItemsForSelectionModeTransition();
 		V.setVisibilityAnimated(fab, View.INVISIBLE);
-		actionMode=ActionModeHelper.startActionMode(this, elevationOnScrollListener, new ActionMode.Callback(){
+		actionMode=ActionModeHelper.startActionMode(this, new ActionMode.Callback(){
 			@Override
 			public boolean onCreateActionMode(ActionMode mode, Menu menu){
 				return true;

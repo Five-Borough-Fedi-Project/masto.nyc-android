@@ -25,7 +25,6 @@ import me.grishka.appkit.views.FragmentRootLinearLayout;
 
 public class ElevationOnScrollListener extends RecyclerView.OnScrollListener implements View.OnScrollChangeListener{
 	private boolean isAtTop;
-	private boolean statusBarColorSuppressed;
 	private Animator currentPanelsAnim;
 	private List<View> views;
 	private FragmentRootLinearLayout fragmentRootLayout;
@@ -106,8 +105,14 @@ public class ElevationOnScrollListener extends RecyclerView.OnScrollListener imp
 				}
 				anims.add(ObjectAnimator.ofFloat(v, View.TRANSLATION_Z, isAtTop ? 0 : V.dp(3)));
 			}
-			if(fragmentRootLayout!=null && !statusBarColorSuppressed){
-				anims.add(ObjectAnimator.ofArgb(fragmentRootLayout, "statusBarBackgroundColor", statusBarColorFor(context)));
+			if(fragmentRootLayout!=null){
+				int color;
+				if(isAtTop){
+					color=UiUtils.getThemeColor(context, R.attr.colorM3Background);
+				}else{
+					color=UiUtils.alphaBlendColors(UiUtils.getThemeColor(context, R.attr.colorM3Background), UiUtils.getThemeColor(context, R.attr.colorM3Primary), 0.07843137f);
+				}
+				anims.add(ObjectAnimator.ofArgb(fragmentRootLayout, "statusBarBackgroundColor", color));
 			}
 			set.playTogether(anims);
 			set.setDuration(150);
@@ -123,28 +128,7 @@ public class ElevationOnScrollListener extends RecyclerView.OnScrollListener imp
 		}
 	}
 
-	public FragmentRootLinearLayout getFragmentRootLayout(){
-		return fragmentRootLayout;
-	}
-
-	private int statusBarColorFor(Context context){
-		if(isAtTop)
-			return UiUtils.getThemeColor(context, R.attr.colorM3Background);
-		return UiUtils.alphaBlendColors(UiUtils.getThemeColor(context, R.attr.colorM3Background), UiUtils.getThemeColor(context, R.attr.colorM3Primary), 0.07843137f);
-	}
-
 	public int getCurrentStatusBarColor(){
-		return statusBarColorFor(fragmentRootLayout.getContext());
-	}
-
-	/**
-	 * While suppressed, scrolling leaves the status bar background alone. Action mode tints it and
-	 * needs scrolling not to paint over that. Unsuppressing re-applies the color for the current
-	 * scroll position, which may have changed in the meantime.
-	 */
-	public void setStatusBarColorSuppressed(boolean suppressed){
-		statusBarColorSuppressed=suppressed;
-		if(!suppressed && fragmentRootLayout!=null)
-			fragmentRootLayout.setStatusBarBackgroundColor(getCurrentStatusBarColor());
+		return fragmentRootLayout.getStatusBarBackgroundColor();
 	}
 }
