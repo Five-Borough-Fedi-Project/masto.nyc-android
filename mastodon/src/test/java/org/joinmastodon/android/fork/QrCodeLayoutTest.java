@@ -4,7 +4,7 @@ import android.content.Context;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.joinmastodon.android.R;
 import org.junit.Before;
@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.GraphicsMode;
 
 import me.grishka.appkit.utils.V;
 
@@ -27,6 +28,8 @@ import static org.junit.Assert.*;
  * window in each orientation.
  */
 @Config(sdk=35)
+// Native graphics gives real text measurement, which the domain chip test needs.
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(RobolectricTestRunner.class)
 public class QrCodeLayoutTest{
 	private static final int LANDSCAPE_W=800, LANDSCAPE_H=360;
@@ -69,29 +72,34 @@ public class QrCodeLayoutTest{
 		assertTrue(container.getMeasuredWidth()>0);
 	}
 
-	/**
-	 * Structural rather than measured: in a narrow card the username has to give up its width so
-	 * the domain chip keeps its own, which on a landscape phone was being squeezed to nothing.
-	 * Robolectric's text measurement is a stub, so the widths it reports can't show that.
-	 */
 	@Test
-	public void username_yields_width_to_the_domain_chip(){
-		View root=laidOut(LANDSCAPE_W, LANDSCAPE_H);
-		LinearLayout.LayoutParams username=(LinearLayout.LayoutParams) root.findViewById(R.id.username).getLayoutParams();
-		LinearLayout.LayoutParams domain=(LinearLayout.LayoutParams) root.findViewById(R.id.domain).getLayoutParams();
+	public void domain_chip_keeps_its_width_when_the_username_is_long(){
+		View root=inflate();
+		((TextView) root.findViewById(R.id.username)).setText("a-very-long-account-name-that-eats-the-row");
+		((TextView) root.findViewById(R.id.domain)).setText("masto.nyc");
+		layOut(root, LANDSCAPE_W, LANDSCAPE_H);
 
-		assertEquals("the username should take the leftover width (0dp plus a weight) so it ellipsizes "+
-				"instead of squeezing the domain chip", 0, username.width);
-		assertTrue("the username needs a weight to get the leftover width", username.weight>0);
-		assertEquals("the domain chip should keep its own width", 0f, domain.weight, 0f);
+		TextView domain=root.findViewById(R.id.domain);
+		float wanted=domain.getPaint().measureText("masto.nyc");
+		assertTrue("the domain chip is "+domain.getWidth()+"dp wide for text wanting "+wanted+
+				"dp, so a long username is squeezing it out. The username should ellipsize instead.",
+				domain.getWidth()>=wanted);
 	}
 
 	private View laidOut(int w, int h){
-		View root=LayoutInflater.from(context).inflate(R.layout.fragment_profile_qr, null);
+		View root=inflate();
+		layOut(root, w, h);
+		return root;
+	}
+
+	private View inflate(){
+		return LayoutInflater.from(context).inflate(R.layout.fragment_profile_qr, null);
+	}
+
+	private void layOut(View root, int w, int h){
 		root.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
 				View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY));
 		root.layout(0, 0, w, h);
-		return root;
 	}
 
 	private int bottomInRoot(View root, View view){

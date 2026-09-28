@@ -155,9 +155,18 @@ build has to match.
   private `NoFrame` theme it copies.
 - `QrCodeLayoutTest` measures the QR code screen in both orientations and checks nothing lands off
   the bottom, which is what the portrait lock used to hide.
+- `QrCodeScreenshotTest` renders the same screen to golden images under `src/test/screenshots`,
+  through Robolectric's native graphics. Re-record after an intentional change with
+  `./gradlew testDebugUnitTest -Dfork.screenshots.record=true`, and look at the diff before
+  committing it. `ForkScreenshot` writes actual, golden and diff images to
+  `build/reports/fork-screenshots` on a failure.
 
-Each was checked by reverting the fix it covers and watching it fail. What none of them cover is
-how any of it looks: the bugs found while writing this were all found by eye on emulators.
+Each was checked by reverting the fix it covers and watching it fail.
+
+What none of them reach is the window: Robolectric draws view trees, so the system bars, real
+dialog windows and anything the platform draws around the app are invisible to it. The action mode
+status bar regression, the worst one found while writing this, would not have been caught by any
+test here. That needs an emulator.
 
 ### Versioning
 

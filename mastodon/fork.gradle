@@ -34,6 +34,8 @@ android {
 // Robolectric reaches into JDK internals that are closed by default from JDK 17 on.
 tasks.withType(Test).configureEach {
 	jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED', '--add-opens=java.base/java.lang=ALL-UNNAMED'
+	// -Dfork.screenshots.record=true re-records the golden images, see ForkScreenshot.
+	systemProperty 'fork.screenshots.record', System.getProperty('fork.screenshots.record', 'false')
 }
 
 dependencies {
