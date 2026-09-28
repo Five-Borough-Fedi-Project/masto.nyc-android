@@ -27,7 +27,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: "platforms;android-37.0 platform-tools"
+          packages: "platforms;android-37.0 platform-tools build-tools;35.0.0"
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -79,6 +79,22 @@ jobs:
       - name: Assert no deprecated system bar color calls came back
         run: |
           set -euo pipefail
+          # The source greps below only cover this repo. This one covers the built APK, so a call
+          # arriving from any dependency counts too - including a re-vendored appkit that lost the
+          # patch, which no grep here would see.
+          apk=mastodon/build/outputs/apk/debug/mastodon-debug.apk
+          dexdump=$(ls "$ANDROID_SDK_ROOT"/build-tools/*/dexdump | head -1)
+          calls=0
+          for d in $(unzip -Z1 "$apk" 'classes*.dex'); do
+            unzip -p "$apk" "$d" > /tmp/one.dex
+            n=$("$dexdump" -d /tmp/one.dex | grep -cE 'invoke-.*(Landroid/view/Window|FragmentRootLinearLayout);\.set(Status|Navigation)BarColor' || true)
+            calls=$((calls+n))
+          done
+          echo "deprecated system bar color call sites in the APK: $calls"
+          if [ "$calls" != "0" ]; then
+            echo "::error::the built APK calls deprecated system bar color APIs - see FORK.md#patched-appkit"
+            exit 1
+          fi
           # Window.setStatusBarColor and setNavigationBarColor do nothing from API 35 and Play
           # Console flags them. An upstream merge can add a call back without breaking the build,
           # unlike the renamed FragmentRootLinearLayout methods, which stop compiling.
