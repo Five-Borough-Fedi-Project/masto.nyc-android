@@ -166,7 +166,14 @@ Each was checked by reverting the fix it covers and watching it fail.
 What none of them reach is the window: Robolectric draws view trees, so the system bars, real
 dialog windows and anything the platform draws around the app are invisible to it. The action mode
 status bar regression, the worst one found while writing this, would not have been caught by any
-test here. That needs an emulator.
+test here.
+
+That one needs an emulator, which is what `tools/visual-check.sh` is for: it drives a running,
+signed-in emulator and compares regions of the screen, mostly status bar strips, against goldens
+per API level. It is not in CI, because the screens worth checking are behind a login and a CI
+emulator has no account. Run it by hand when touching anything around the system bars.
+[tools/visual/README.md](tools/visual/README.md) has the details, including the run where it
+catches that exact regression.
 
 ### Versioning
 
