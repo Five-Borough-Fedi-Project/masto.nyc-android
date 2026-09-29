@@ -1,0 +1,13 @@
+#Tue Sep 29 00:35:42 EDT 2026
+base.0=/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/dex/debugAndroidTest/mergeExtDexDebugAndroidTest/classes.dex
+base.1=/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/dex/debugAndroidTest/mergeLibDexDebugAndroidTest/0/classes.dex
+base.2=/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/dex/debugAndroidTest/mergeProjectDexDebugAndroidTest/0/classes.dex
+base.3=/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/global_synthetics_dex/debugAndroidTest/generateDebugAndroidTestGlobalSynthetics/classes.dex
+path.0=classes.dex
+path.1=0/classes.dex
+path.2=0/classes.dex
+path.3=classes.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex
+renamed.2=classes3.dex
+renamed.3=classes4.dex

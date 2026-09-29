@@ -1,0 +1,5 @@
+me.grishka.appkit.test.appkit-updated_navigation_xml-0 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/generated/updated_navigation_xml/debugAndroidTest
+me.grishka.appkit.test.appkit-packageDebugAndroidTestResources-1 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/incremental/debugAndroidTest/packageDebugAndroidTestResources/merged.dir
+me.grishka.appkit.test.appkit-packageDebugAndroidTestResources-2 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/incremental/debugAndroidTest/packageDebugAndroidTestResources/stripped.dir
+me.grishka.appkit.test.appkit-debugAndroidTest-3 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources
+gradleHome-0 /home/seano/.gradle
