@@ -131,8 +131,15 @@ jobs:
 
       # Nothing here has run a test. CI covers pull requests, but a release builds a tag, and
       # shipping a tag that never passed anything is how the last two releases went wrong.
+      # ci_signing.gradle is applied to build.gradle above, and it reads the keystore at
+      # configuration time, so every Gradle invocation in this job needs these. Without them the
+      # build fails with "Cannot convert 'null' to File" before running anything.
       - name: Run checks
         run: ./gradlew testDebugUnitTest lintDebug --console=plain
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
       # Everything is built before anything is uploaded. The Play upload used to run first, so a
       # later failure left Play updated and the GitHub release without its APK, which is exactly
@@ -144,10 +151,24 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
-      - name: Build and deploy to Google Play
+      # Always validate first. Play checks the bundle, the track and the notes and publishes
+      # nothing, so a rejection costs a failed job rather than a burnt versionCode.
+      - name: Validate the upload against Google Play
         run: bundle exec fastlane deploy
         env:
-          PLAY_VALIDATE_ONLY: ${{ inputs.dry_run || false }}
+          PLAY_VALIDATE_ONLY: true
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          PLAY_TRACK: ${{ vars.PLAY_TRACK || 'internal' }}
+          PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          SUPPLY_SKIP_UPLOAD_METADATA: true
+
+      - name: Build and deploy to Google Play
+        if: ${{ !inputs.dry_run }}
+        run: bundle exec fastlane deploy
+        env:
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
