@@ -15,6 +15,10 @@ on:
       tag:
         description: "Release tag to publish"
         required: true
+      dry_run:
+        description: "Validate against Play without publishing anything"
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -108,9 +112,42 @@ jobs:
           EOF
           rm -f /tmp/sa.json
 
+      # Play falls back to default.txt when a versionCode has no changelog of its own, which still
+      # says "released the first version!". Fail instead of shipping that.
+      - name: Assert the changelog for this versionCode exists
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          IFS=. read -r MAJOR MINOR PATCH <<< "${TAG#v}"
+          CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
+          FILE="fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+          if [ ! -s "$FILE" ]; then
+            echo "::error::$FILE is missing or empty, so Play would show default.txt instead."
+            exit 1
+          fi
+          echo "Release notes for versionCode $CODE:"
+          cat "$FILE"
+
+      # Nothing here has run a test. CI covers pull requests, but a release builds a tag, and
+      # shipping a tag that never passed anything is how the last two releases went wrong.
+      - name: Run checks
+        run: ./gradlew testDebugUnitTest lintDebug --console=plain
+
+      # Everything is built before anything is uploaded. The Play upload used to run first, so a
+      # later failure left Play updated and the GitHub release without its APK, which is exactly
+      # what v0.1.2 did.
+      - name: Build bundle and APKs
+        run: ./gradlew bundleRelease assembleRelease assembleGithubRelease --console=plain
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
       - name: Build and deploy to Google Play
         run: bundle exec fastlane deploy
         env:
+          PLAY_VALIDATE_ONLY: ${{ inputs.dry_run || false }}
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -119,25 +156,11 @@ jobs:
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           SUPPLY_SKIP_UPLOAD_METADATA: true
 
-      - name: Build release apk
-        run: ./gradlew assembleRelease
-        env:
-          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-
       - name: Upload release apk
         uses: actions/upload-artifact@v4
         with:
           name: mastodon-release.apk
           path: mastodon/build/outputs/apk/release/mastodon-release.apk
-
-      - name: Build githubRelease apk
-        run: ./gradlew assembleGithubRelease
-        env:
-          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Upload githubRelease apk
         uses: actions/upload-artifact@v4

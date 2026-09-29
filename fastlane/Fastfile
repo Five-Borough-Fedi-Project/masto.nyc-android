@@ -40,6 +40,16 @@ platform :android do
     upload_to_play_store(
       track: ENV["PLAY_TRACK"] || "internal",
       release_status: ENV["PLAY_RELEASE_STATUS"] || "draft",
+      # masto.nyc fork: name the bundle rather than letting supply search for artifacts. It
+      # collects every APK the build produced, and one stray APK next to the bundle fails the
+      # upload with "Cannot provide both apk(s) and aab". That broke the v0.1.3 release.
+      aab: ENV["AAB_PATH"] || "mastodon/build/outputs/bundle/release/mastodon-release.aab",
+      skip_upload_apk: true,
+      # masto.nyc fork: send the mapping so Play Console deobfuscates crashes.
+      mapping: ENV["MAPPING_PATH"] || "mastodon/build/outputs/mapping/release/mapping.txt",
+      # masto.nyc fork: PLAY_VALIDATE_ONLY=true checks the upload against Play and publishes
+      # nothing, so the pipeline can be tested without burning a versionCode.
+      validate_only: ENV["PLAY_VALIDATE_ONLY"] == "true",
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
