@@ -1,0 +1,3 @@
+- The profile QR code screen works in landscape now, instead of forcing the phone back to portrait.
+- Smaller download, from updated build tooling.
+- Groundwork for Android 15 and 16: the app no longer sets system bar colours the way those versions ignore. On Android 14 and below, the status bar no longer turns blue while selecting items in a list.
