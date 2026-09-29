@@ -44,6 +44,11 @@ jobs:
       - name: Assemble
         run: ./gradlew assembleDebug --console=plain
 
+      # Every build type has to resolve against the vendored appkit, not just debug: it is a project
+      # dependency, so Gradle matches build types, and the release workflow builds githubRelease.
+      - name: Assemble the other build types
+        run: ./gradlew assembleGithubRelease assembleBeta assembleAndroidTest --console=plain
+
       - name: Unit tests
         run: ./gradlew testDebugUnitTest --console=plain
 

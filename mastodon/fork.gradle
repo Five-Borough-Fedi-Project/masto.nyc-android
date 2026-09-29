@@ -53,6 +53,19 @@ configurations.configureEach {
 	}
 }
 
+android {
+	buildTypes {
+		// third_party/appkit is a project dependency, not a Maven artifact, so Gradle matches its
+		// build types against ours and only finds debug and release. Upstream's extra build types
+		// need to say which of those to fall back to, or resolution fails with "No matching variant
+		// of project ':appkit'". Drop this along with the vendored appkit.
+		githubRelease { matchingFallbacks = ['release'] }
+		beta { matchingFallbacks = ['release'] }
+		githubDebug { matchingFallbacks = ['debug'] }
+		screenshotsUiTest { matchingFallbacks = ['debug'] }
+	}
+}
+
 // Guard against the vendored appkit going stale. Substitution ignores the version build.gradle
 // asks for, so an upstream bump to a newer appkit would silently keep building the source in
 // third_party/appkit. Fail instead, and say what to do about it.

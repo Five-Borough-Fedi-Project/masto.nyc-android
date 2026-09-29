@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "me.grishka.appkit.test.appkit-mergeDebugAndroidTestResources-2:/values-large-v4/values-large-v4.xml",
+            "map": [
+                {
+                    "source": "/tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/fix/third_party/appkit/build/intermediates/packaged_res/debug/packageDebugResources/values-large-v4/values-large-v4.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                }
+            ]
+        }
+    ]
+}
