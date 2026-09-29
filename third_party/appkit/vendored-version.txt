@@ -1,0 +1,6 @@
+# The appkit release this directory was vendored from. mastodon/fork.gradle fails the build when
+# this stops matching the version mastodon/build.gradle asks for, which is how an upstream appkit
+# bump gets noticed: dependency substitution would otherwise swap in this source silently and the
+# bump would do nothing. See README.md for how to re-vendor.
+version=1.5.3
+commit=2f69cf4

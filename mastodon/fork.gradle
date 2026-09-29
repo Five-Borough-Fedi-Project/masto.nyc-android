@@ -23,6 +23,59 @@ android {
 	}
 }
 
+android {
+	testOptions {
+		// Robolectric needs the merged resources to resolve themes. Kept here rather than in
+		// build.gradle's testOptions block, which upstream owns.
+		unitTests.includeAndroidResources = true
+	}
+}
+
+// Robolectric reaches into JDK internals that are closed by default from JDK 17 on.
+tasks.withType(Test).configureEach {
+	jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED', '--add-opens=java.base/java.lang=ALL-UNNAMED'
+	// -Dfork.screenshots.record=true re-records the golden images, see ForkScreenshot.
+	systemProperty 'fork.screenshots.record', System.getProperty('fork.screenshots.record', 'false')
+}
+
+dependencies {
+	// Fork-only test dependency: the theme and layout tests under
+	// src/test/java/org/joinmastodon/android/fork cover regressions that only show up on a device.
+	testImplementation 'org.robolectric:robolectric:4.17'
+}
+
+// Build against the patched appkit in third_party/appkit instead of the published artifact. The
+// version in build.gradle stays upstream's, so dropping this block is all it takes to go back once
+// appkit publishes the fix. See third_party/appkit/README.md.
+configurations.configureEach {
+	resolutionStrategy.dependencySubstitution {
+		substitute module('me.grishka.appkit:appkit') using project(':appkit')
+	}
+}
+
+// Guard against the vendored appkit going stale. Substitution ignores the version build.gradle
+// asks for, so an upstream bump to a newer appkit would silently keep building the source in
+// third_party/appkit. Fail instead, and say what to do about it.
+afterEvaluate {
+	def vendored = new Properties()
+	def versionFile = rootProject.file('third_party/appkit/vendored-version.txt')
+	versionFile.withInputStream { vendored.load(it) }
+	def declared = configurations.implementation.allDependencies.find {
+		it.group == 'me.grishka.appkit' && it.name == 'appkit'
+	}?.version
+	if (declared == null) {
+		throw new GradleException("third_party/appkit is still substituted in, but build.gradle no " +
+				"longer depends on me.grishka.appkit:appkit. If upstream dropped appkit, drop the " +
+				"vendored copy too, per third_party/appkit/README.md.")
+	}
+	if (declared != vendored.version) {
+		throw new GradleException("build.gradle wants appkit ${declared}, but third_party/appkit is " +
+				"vendored from ${vendored.version}. Either re-vendor onto ${declared} with the patch " +
+				"in third_party/appkit/patches/, or, if ${declared} already has the fix, delete the " +
+				"vendored copy. third_party/appkit/README.md has both paths.")
+	}
+}
+
 // Version derivation, active only when RELEASE_TAG is set. Applied here rather than appended by
 // each workflow so local and CI builds cannot drift apart.
 apply from: 'ci_version.gradle'

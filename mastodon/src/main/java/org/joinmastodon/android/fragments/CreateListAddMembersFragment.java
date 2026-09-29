@@ -172,12 +172,12 @@ public class CreateListAddMembersFragment extends BaseAccountListFragment implem
 
 	@Override
 	protected void setStatusBarColor(int color){
-		rootView.setStatusBarColor(color);
+		rootView.setStatusBarBackgroundColor(color);
 	}
 
 	@Override
 	protected void setNavigationBarColor(int color){
-		rootView.setNavigationBarColor(color);
+		rootView.setNavigationBarBackgroundColor(color);
 	}
 
 	private void dismissSearchFragment(){

@@ -1,0 +1,10 @@
+me.grishka.appkit-recyclerview-1.2.1.1-0 /home/seano/.gradle/caches/8.13/transforms/827da36578beb6b0b5beb1760980e818/transformed/recyclerview-1.2.1.1/res
+me.grishka.appkit-swiperefreshlayout-1.1.0.1-1 /home/seano/.gradle/caches/8.13/transforms/843e46b291903ef7493913d99cab77b1/transformed/swiperefreshlayout-1.1.0.1/res
+me.grishka.appkit-pngs-2 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/build/generated/res/pngs/release
+me.grishka.appkit-resValues-3 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/build/generated/res/resValues/release
+me.grishka.appkit-updated_navigation_xml-4 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/build/generated/updated_navigation_xml/release
+me.grishka.appkit-mergeReleaseResources-5 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/build/intermediates/incremental/release/mergeReleaseResources/merged.dir
+me.grishka.appkit-mergeReleaseResources-6 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/build/intermediates/incremental/release/mergeReleaseResources/stripped.dir
+me.grishka.appkit-release-7 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/build/intermediates/merged_res/release/mergeReleaseResources
+me.grishka.appkit-main-8 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/main/res
+me.grishka.appkit-release-9 /tmp/claude-1000/-media-seano-library-git-masto-nyc-android/44428cbb-3a5c-42b8-9999-d33e58ab9eea/scratchpad/wt/bars/third_party/appkit/src/release/res

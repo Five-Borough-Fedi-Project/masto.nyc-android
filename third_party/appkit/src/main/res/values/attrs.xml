@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<attr name="errorViewLayout" format="reference"/>
+	<attr name="emptyViewLayout" format="reference"/>
+	<attr name="appkitEmptyButtonStyle" format="reference"/>
+	<attr name="appkitEmptyTextAppearance" format="reference"/>
+	<attr name="appkitErrorButtonStyle" format="reference"/>
+	<attr name="appkitDefaultErrorText" format="string|reference"/>
+	<attr name="appkitRetryButtonText" format="string|reference"/>
+	<attr name="appkitBackDrawable" format="reference"/>
+	<attr name="appkitToolbarElevation" format="dimension"/>
+	<attr name="appkitToolbarBackground" format="color|reference"/>
+	<attr name="actionBarIconTint" format="color|reference"/>
+	<!-- Colors fragments paint behind the status and navigation bars. Set these instead of
+	     android:statusBarColor/android:navigationBarColor, which should stay transparent. -->
+	<attr name="appkitStatusBarColor" format="color|reference"/>
+	<attr name="appkitNavigationBarColor" format="color|reference"/>
+</resources>

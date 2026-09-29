@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 9.4.0" type="incidents">
+
+    <incident
+        id="ResourceType"
+        severity="error"
+        message="Expected resource of type styleable">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/fragments/AppKitFragment.java"
+            line="167"
+            column="62"
+            startOffset="5056"
+            endLine="167"
+            endColumn="67"
+            endOffset="5061"/>
+    </incident>
+
+    <incident
+        id="ResourceType"
+        severity="error"
+        message="Expected resource of type styleable">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/fragments/AppKitFragment.java"
+            line="169"
+            column="30"
+            startOffset="5126"
+            endLine="169"
+            endColumn="31"
+            endOffset="5127"/>
+    </incident>
+
+    <incident
+        id="ExifInterface"
+        severity="warning"
+        message="Avoid using `android.media.ExifInterface`; use `androidx.exifinterface.media.ExifInterface` instead">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/imageloader/ImageCache.java"
+            line="14"
+            column="8"
+            startOffset="462"
+            endLine="14"
+            endColumn="35"
+            endOffset="489"/>
+    </incident>
+
+    <incident
+        id="SuspiciousIndentation"
+        severity="warning"
+        message="The indentation string here is different from on the previous line (`&quot; &quot;` vs `\t`)">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/imageloader/StackBlur.java"
+            line="46"
+            column="2"
+            startOffset="2947"
+            endLine="46"
+            endColumn="3"
+            endOffset="2948"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/imageloader/StackBlur.java"
+            line="45"
+            column="2"
+            startOffset="2918"
+            endLine="45"
+            endColumn="3"
+            endOffset="2919"
+            message="Previous line indentation here"/>
+    </incident>
+
+    <incident
+        id="InflateParams"
+        severity="warning"
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/fragments/AppKitFragment.java"
+            line="401"
+            column="73"
+            startOffset="11567"
+            endLine="401"
+            endColumn="77"
+            endOffset="11571"/>
+    </incident>
+
+    <incident
+        id="InflateParams"
+        severity="warning"
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/fragments/BaseRecyclerFragment.java"
+            line="84"
+            column="54"
+            startOffset="2737"
+            endLine="84"
+            endColumn="58"
+            endOffset="2741"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.annotation:annotation than 1.3.0 is available: 1.11.0">
+        <fix-replace
+            description="Change to 1.11.0"
+            family="Update versions"
+            oldString="1.3.0"
+            replacement="1.11.0"
+            priority="0"/>
+        <location
+            file="${:appkit*projectDir}/build.gradle"
+            line="28"
+            column="6"
+            startOffset="699"
+            endLine="28"
+            endColumn="44"
+            endOffset="737"/>
+    </incident>
+
+    <incident
+        id="NewerVersionAvailable"
+        severity="warning"
+        message="A newer version of com.squareup.okhttp3:okhttp than 3.14.9 is available: 5.5.0">
+        <fix-replace
+            description="Change to 5.5.0"
+            family="Update versions"
+            oldString="3.14.9"
+            replacement="5.5.0"
+            priority="0"/>
+        <location
+            file="${:appkit*projectDir}/build.gradle"
+            line="29"
+            column="6"
+            startOffset="743"
+            endLine="29"
+            endColumn="42"
+            endOffset="779"/>
+    </incident>
+
+    <incident
+        id="SpUsage"
+        severity="warning"
+        message="Should use &quot;`sp`&quot; instead of &quot;`dp`&quot; for text sizes">
+        <fix-replace
+            description="Replace with sp"
+            oldPattern=".*(di?p)"
+            replacement="sp"
+            priority="0"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/appkit_error.xml"
+            line="16"
+            column="3"
+            startOffset="516"
+            endLine="16"
+            endColumn="27"
+            endOffset="540"/>
+    </incident>
+
+    <incident
+        id="SpUsage"
+        severity="warning"
+        message="Should use &quot;`sp`&quot; instead of &quot;`dp`&quot; for text sizes">
+        <fix-replace
+            description="Replace with sp"
+            oldPattern=".*(di?p)"
+            replacement="sp"
+            priority="0"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/appkit_load_more.xml"
+            line="27"
+            column="4"
+            startOffset="788"
+            endLine="27"
+            endColumn="28"
+            endOffset="812"/>
+    </incident>
+
+    <incident
+        id="UseRequiresApi"
+        severity="warning"
+        message="Use `@RequiresApi(VERSION_CODES.O)` instead of `@TargetApi` to propagate the requirement to callers of `closeWriter`">
+        <fix-replace
+            description="Replace with `@RequiresApi`"
+            robot="true"
+            independent="true"
+            oldPattern="(TargetApi)"
+            replacement="androidx.annotation.RequiresApi"
+            shortenNames="true"
+            priority="0"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/imageloader/disklrucache/DiskLruCache.java"
+            line="676"
+            column="3"
+            startOffset="22899"
+            endLine="676"
+            endColumn="30"
+            endOffset="22926"/>
+    </incident>
+
+    <incident
+        id="UseRequiresApi"
+        severity="warning"
+        message="Use `@RequiresApi(VERSION_CODES.O)` instead of `@TargetApi` to propagate the requirement to callers of `flushWriter`">
+        <fix-replace
+            description="Replace with `@RequiresApi`"
+            robot="true"
+            independent="true"
+            oldPattern="(TargetApi)"
+            replacement="androidx.annotation.RequiresApi"
+            shortenNames="true"
+            priority="0"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/imageloader/disklrucache/DiskLruCache.java"
+            line="700"
+            column="3"
+            startOffset="23636"
+            endLine="700"
+            endColumn="30"
+            endOffset="23663"/>
+    </incident>
+
+    <incident
+        id="NotifyDataSetChanged"
+        severity="warning"
+        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort.">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/fragments/BaseRecyclerFragment.java"
+            line="263"
+            column="3"
+            startOffset="7773"
+            endLine="263"
+            endColumn="43"
+            endOffset="7813"/>
+    </incident>
+
+    <incident
+        id="NotifyDataSetChanged"
+        severity="warning"
+        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort.">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/fragments/BaseRecyclerFragment.java"
+            line="274"
+            column="4"
+            startOffset="7996"
+            endLine="274"
+            endColumn="44"
+            endOffset="8036"/>
+    </incident>
+
+    <incident
+        id="NotifyDataSetChanged"
+        severity="warning"
+        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort.">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/utils/MergeRecyclerAdapter.java"
+            line="37"
+            column="3"
+            startOffset="1458"
+            endLine="37"
+            endColumn="25"
+            endOffset="1480"/>
+    </incident>
+
+    <incident
+        id="NotifyDataSetChanged"
+        severity="warning"
+        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort.">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/utils/MergeRecyclerAdapter.java"
+            line="45"
+            column="4"
+            startOffset="1703"
+            endLine="45"
+            endColumn="26"
+            endOffset="1725"/>
+    </incident>
+
+    <incident
+        id="NotifyDataSetChanged"
+        severity="warning"
+        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort.">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/utils/MergeRecyclerAdapter.java"
+            line="60"
+            column="3"
+            startOffset="2047"
+            endLine="60"
+            endColumn="25"
+            endOffset="2069"/>
+    </incident>
+
+    <incident
+        id="NotifyDataSetChanged"
+        severity="warning"
+        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort.">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/utils/MergeRecyclerAdapter.java"
+            line="186"
+            column="4"
+            startOffset="5047"
+            endLine="186"
+            endColumn="26"
+            endOffset="5069"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; `VERSION.SDK_INT &lt; VERSION_CODES.O` is never true here">
+        <fix-data conditional="false"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/imageloader/disklrucache/DiskLruCache.java"
+            line="679"
+            column="9"
+            startOffset="23080"
+            endLine="679"
+            endColumn="42"
+            endOffset="23113"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; `VERSION.SDK_INT &lt; VERSION_CODES.O` is never true here">
+        <fix-data conditional="false"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/imageloader/disklrucache/DiskLruCache.java"
+            line="703"
+            column="9"
+            startOffset="23817"
+            endLine="703"
+            endColumn="42"
+            endOffset="23850"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; `SDK_INT` is always >= 21">
+        <fix-data conditional="true"/>
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/views/NavigationSpinner.java"
+            line="93"
+            column="6"
+            startOffset="2808"
+            endLine="93"
+            endColumn="59"
+            endOffset="2861"/>
+    </incident>
+
+    <incident
+        id="MergeRootFrame"
+        severity="warning"
+        message="This `&lt;FrameLayout>` can be replaced with a `&lt;merge>` tag">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/loading.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="11"
+            endColumn="15"
+            endOffset="322"/>
+    </incident>
+
+    <incident
+        id="Overdraw"
+        severity="warning"
+        message="Possible overdraw: Root element paints background `?android:attr/selectableItemBackground` with a theme that also paints a background (inferred theme is `@android:style/Theme.Holo`)">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/appkit_navigation_spinner.xml"
+            line="6"
+            column="14"
+            startOffset="318"
+            endLine="6"
+            endColumn="73"
+            endOffset="377"/>
+    </incident>
+
+    <incident
+        id="Overdraw"
+        severity="warning"
+        message="Possible overdraw: Root element paints background `?appkitToolbarBackground` with a theme that also paints a background (inferred theme is `@android:style/Theme.Holo`)">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/appkit_toolbar.xml"
+            line="11"
+            column="2"
+            startOffset="429"
+            endLine="11"
+            endColumn="47"
+            endOffset="474"/>
+    </incident>
+
+    <incident
+        id="Overdraw"
+        severity="warning"
+        message="Possible overdraw: Root element paints background `?android:windowBackground` with a theme that also paints a background (inferred theme is `@android:style/Theme.Holo`)">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/appkit_toolbar_fragment.xml"
+            line="6"
+            column="2"
+            startOffset="256"
+            endLine="6"
+            endColumn="48"
+            endOffset="302"/>
+    </incident>
+
+    <incident
+        id="Overdraw"
+        severity="warning"
+        message="Possible overdraw: Root element paints background `?android:windowBackground` with a theme that also paints a background (inferred theme is `@android:style/Theme.Holo`)">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/loader_fragment.xml"
+            line="9"
+            column="2"
+            startOffset="348"
+            endLine="9"
+            endColumn="48"
+            endOffset="394"/>
+    </incident>
+
+    <incident
+        id="ClickableViewAccessibility"
+        severity="warning"
+        message="Custom view `ContainerView` overrides `onTouchEvent` but not `performClick`">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/views/BottomSheet.java"
+            line="340"
+            column="18"
+            startOffset="10811"
+            endLine="340"
+            endColumn="30"
+            endOffset="10823"/>
+    </incident>
+
+    <incident
+        id="ClickableViewAccessibility"
+        severity="warning"
+        message="Custom view `DisableableViewPager` overrides `onTouchEvent` but not `performClick`">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/views/DisableableViewPager.java"
+            line="29"
+            column="20"
+            startOffset="685"
+            endLine="29"
+            endColumn="32"
+            endOffset="697"/>
+    </incident>
+
+    <incident
+        id="ClickableViewAccessibility"
+        severity="warning"
+        message="Custom view `UsableRecyclerView` overrides `onTouchEvent` but not `performClick`">
+        <location
+            file="${:appkit*debug*MAIN*sourceProvider*0*javaDir*0}/me/grishka/appkit/views/UsableRecyclerView.java"
+            line="132"
+            column="17"
+            startOffset="4510"
+            endLine="132"
+            endColumn="29"
+            endOffset="4522"/>
+    </incident>
+
+</incidents>

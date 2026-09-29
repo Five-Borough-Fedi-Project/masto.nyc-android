@@ -112,7 +112,7 @@ public class ElevationOnScrollListener extends RecyclerView.OnScrollListener imp
 				}else{
 					color=UiUtils.alphaBlendColors(UiUtils.getThemeColor(context, R.attr.colorM3Background), UiUtils.getThemeColor(context, R.attr.colorM3Primary), 0.07843137f);
 				}
-				anims.add(ObjectAnimator.ofArgb(fragmentRootLayout, "statusBarColor", color));
+				anims.add(ObjectAnimator.ofArgb(fragmentRootLayout, "statusBarBackgroundColor", color));
 			}
 			set.playTogether(anims);
 			set.setDuration(150);
@@ -129,6 +129,6 @@ public class ElevationOnScrollListener extends RecyclerView.OnScrollListener imp
 	}
 
 	public int getCurrentStatusBarColor(){
-		return fragmentRootLayout.getStatusBarColor();
+		return fragmentRootLayout.getStatusBarBackgroundColor();
 	}
 }

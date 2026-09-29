@@ -59,9 +59,12 @@ Conflicts should be confined to the files below.
 | `res/drawable-anydpi-v26/ic_launcher_{foreground,background,monochrome}.xml` | replaced artwork |
 | `res/mipmap-*/ic_launcher.png` | replaced artwork |
 | `README.md`, `fastlane/metadata/android/en-US/*` | store listing and repo docs |
+| `settings.gradle` | one line at the end: `apply from: 'fork-settings.gradle'` |
+| `gradle.properties` | `android.nonTransitiveRClass=false`, see [below](#patched-appkit) |
+| `res/values/styles.xml`, `.../ui/utils/ActionModeHelper.java`, `.../utils/ElevationOnScrollListener.java`, `.../ui/photoviewer/{PhotoViewer,AvatarCropper}.java`, `.../fragments/{ListMembers,CreateListAddMembers}Fragment.java`, `.../settings/FilterWordsFragment.java`, `.../profile/ProfileQrCodeFragment.java` | system bar colors without deprecated APIs, see [below](#patched-appkit) |
 
 These are new files, so they can never conflict: `ForkConfig.java`, `ci_version.gradle`,
-`FORK.md`, `deploy/`, and the
+`FORK.md`, `deploy/`, `fork-settings.gradle`, `third_party/`, and the
 generated artwork under `res/drawable-*dpi/`.
 
 Changing `applicationId` also moves the OAuth callback scheme (`${applicationId}-auth://callback`)
@@ -116,6 +119,61 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
   unzip -p app.apk $d | strings | grep -c MastodonAndroid
 done
 ```
+
+### Patched appkit
+
+Play Console flags calls to `Window.setStatusBarColor` and `setNavigationBarColor`, deprecated from
+Android 15, and most of ours were in appkit. `third_party/appkit` is appkit built from source with a
+patch that makes the bars transparent through the theme instead, and renames
+`FragmentRootLinearLayout`'s color setters, which Play flags by name. Its
+[README](third_party/appkit/README.md) covers what's patched and how to drop it.
+
+The app side is ordinary edits to upstream files, kept as its own commit so it can go to
+mastodon/mastodon-android as-is once appkit publishes the change. After an upstream merge, the
+compiler catches anything that brought a call back: a new `rootView.setStatusBarColor(...)` on a
+`FragmentRootLinearLayout` won't resolve. A new `Window.setStatusBarColor` call would compile, so
+it's worth grepping for.
+
+`mastodon/fork.gradle` fails the build if the vendored copy's version stops matching what
+`build.gradle` asks for, since substitution would otherwise swallow an upstream appkit bump
+silently. CI greps for the deprecated calls returning, which the compiler can't catch.
+
+`android.nonTransitiveRClass=false` is there because upstream code reaches recyclerview resources
+through `me.grishka.appkit.R`. The published AAR was built with transitive R classes, and a source
+build has to match.
+
+### Tests for all this
+
+`mastodon/src/test/java/org/joinmastodon/android/fork/` holds tests for the fork's own changes, and
+`fork.gradle` adds Robolectric for them, so upstream's `build.gradle` stays untouched:
+
+- `SystemBarColorApiTest` checks the vendored appkit still has the renamed accessors and none of
+  the flagged names. The compiler covers direct calls; this covers `ObjectAnimator`, which resolves
+  property names by reflection, where a stale name compiles and animates nothing.
+- `ThemeSystemBarColorsTest` checks every app theme leaves the window's bars transparent and gives
+  fragments a color to paint behind them, and that the QR dialog theme matches the platform's
+  private `NoFrame` theme it copies.
+- `QrCodeLayoutTest` measures the QR code screen in both orientations and checks nothing lands off
+  the bottom, which is what the portrait lock used to hide.
+- `QrCodeScreenshotTest` renders the same screen to golden images under `src/test/screenshots`,
+  through Robolectric's native graphics. Re-record after an intentional change with
+  `./gradlew testDebugUnitTest -Dfork.screenshots.record=true`, and look at the diff before
+  committing it. `ForkScreenshot` writes actual, golden and diff images to
+  `build/reports/fork-screenshots` on a failure.
+
+Each was checked by reverting the fix it covers and watching it fail.
+
+What none of them reach is the window: Robolectric draws view trees, so the system bars, real
+dialog windows and anything the platform draws around the app are invisible to it. The action mode
+status bar regression, the worst one found while writing this, would not have been caught by any
+test here.
+
+That one needs an emulator, which is what `tools/visual-check.sh` is for: it drives a running,
+signed-in emulator and compares regions of the screen, mostly status bar strips, against goldens
+per API level. It is not in CI, because the screens worth checking are behind a login and a CI
+emulator has no account. Run it by hand when touching anything around the system bars.
+[tools/visual/README.md](tools/visual/README.md) has the details, including the run where it
+catches that exact regression.
 
 ### Versioning
 

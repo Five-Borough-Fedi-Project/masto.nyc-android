@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 9.4.0" type="partial_results">
+    <map id="UnusedResources">
+        <location id="R.drawable.ic_menu"
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/drawable/ic_menu.xml"
+            line="1"
+            column="1"
+            startOffset="0"
+            endLine="5"
+            endColumn="10"
+            endOffset="329"/>
+        <location id="R.layout.appkit_empty"
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/appkit_empty.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="26"
+            endColumn="16"
+            endOffset="803"/>
+        <location id="R.layout.appkit_error"
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/appkit_error.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="25"
+            endColumn="16"
+            endOffset="764"/>
+        <location id="R.layout.list_fragment"
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/list_fragment.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="21"
+            endColumn="48"
+            endOffset="735"/>
+        <location id="R.layout.tabbed_loader_fragment"
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/layout/tabbed_loader_fragment.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="27"
+            endColumn="16"
+            endOffset="860"/>
+        <location id="R.style.Theme_AppKit"
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/values/themes.xml"
+            line="4"
+            column="9"
+            startOffset="61"
+            endLine="4"
+            endColumn="28"
+            endOffset="80"/>
+        <location id="R.style.Theme_AppKit_Light"
+            file="${:appkit*debug*MAIN*sourceProvider*0*resDir*0}/values/themes.xml"
+            line="24"
+            column="9"
+            startOffset="1229"
+            endLine="24"
+            endColumn="34"
+            endOffset="1254"/>
+        <entry
+            name="model"
+            string="attr[appkitEmptyTextAppearance(D),appkitEmptyButtonStyle(D),appkitDefaultErrorText(D),appkitRetryButtonText(U),appkitErrorButtonStyle(D),appkitToolbarBackground(U),appkitToolbarElevation(U),errorViewLayout(U),emptyViewLayout(U),appkitBackDrawable(U),actionBarIconTint(U),appkitStatusBarColor(U),appkitNavigationBarColor(U),android_colorPrimaryDark(E),android_colorControlNormal(E),android_textAppearanceMedium(E)],dimen[navigation_spinner_popup_yoffset(U)],drawable[ic_arrow_back(U),ic_arrow_drop_down(U),ic_menu(D)],id[empty_text(U),empty_button(U),error_text(D),error_retry(U),load_more_progress(U),load_more_error(U),toolbar(U),appkit_content(U),refresh_layout(U),content_wrap(U),list(U),empty(U),appkit_loader_root(D),appkit_loader_content(D),loading(U),error(U),content_stub(U),tag_image_load_task(U),tag_detach_listener(U),tag_visibility_anim(U),content(D),fragment_wrap(U)],layout[appkit_empty(D),appkit_error(D),appkit_load_more(U),appkit_navigation_spinner(U),appkit_spinner_view(U),appkit_toolbar(U),loader_fragment(U),appkit_toolbar_fragment(U),list_fragment(D),loading(U),recycler_fragment(U),tabbed_loader_fragment(D)],string[empty_list(U)],style[Theme_AppKit(D),Theme_AppKit_Light(D)];2a^0^36^1,2b^2^3^4,2c^3,2d^10,2e^12,2f^5^6^30,30^2f^33^7,31^2f,32^2a,34^8,35^2f^33^2b,37^2a^2b^d^e^f,38^2a^2b^d^e^f;;;"/>
+    </map>
+
+</incidents>

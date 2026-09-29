@@ -8,3 +8,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Mastodon"
 include ':mastodon'
+
+// masto.nyc fork: see fork-settings.gradle
+apply from: 'fork-settings.gradle'
