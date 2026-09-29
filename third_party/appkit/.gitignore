@@ -1,0 +1,4 @@
+# Build outputs from the vendored library. The root .gitignore only covers /build, and these
+# got committed once already, which broke a release: fastlane found the androidTest APK next to
+# the app bundle and refused to upload either.
+/build

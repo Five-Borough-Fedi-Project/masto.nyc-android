@@ -81,6 +81,16 @@ jobs:
           fi
           exit $fail
 
+      - name: Assert no build outputs are committed
+        run: |
+          set -euo pipefail
+          # These were committed once, and the release failed because fastlane found the vendored
+          # library's androidTest APK sitting next to the app bundle.
+          if git ls-files | grep -E '/build/' ; then
+            echo "::error::build outputs are tracked in git - see third_party/appkit/.gitignore"
+            exit 1
+          fi
+
       - name: Assert no deprecated system bar color calls came back
         run: |
           set -euo pipefail
