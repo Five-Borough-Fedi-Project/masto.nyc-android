@@ -54,6 +54,25 @@ platform :android do
       skip_upload_screenshots: true
     )
   end
+  # masto.nyc fork: promotes a build already uploaded to Play, without rebuilding or re-uploading
+  # it. A versionCode can only be uploaded once, so a draft that needs to go live has to be
+  # promoted rather than released again. Driven by .github/workflows/promote-play-release.yml.
+  desc "Promote a build already on Play to a release status"
+  lane :promote do
+    upload_to_play_store(
+      track: ENV["PLAY_TRACK"] || "production",
+      version_code: Integer(ENV.fetch("PLAY_VERSION_CODE")),
+      release_status: ENV["PLAY_RELEASE_STATUS"] || "completed",
+      validate_only: ENV["PLAY_VALIDATE_ONLY"] == "true",
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
   lane :beta do
      gradle(
       task: "bundle",
