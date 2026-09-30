@@ -1,0 +1,23 @@
+name: Play status
+
+# Prints what Google Play has on each track, so "is it live?" has an answer that doesn't depend on
+# the store page, which lags by hours, or on someone opening the Console.
+#
+# Read-only: it opens an edit, reads the tracks, and deletes the edit without committing.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet google-auth
+      - name: Read the Play tracks
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        run: python3 tools/play-status.py
