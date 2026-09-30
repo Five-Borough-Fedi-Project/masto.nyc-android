@@ -175,6 +175,22 @@ emulator has no account. Run it by hand when touching anything around the system
 [tools/visual/README.md](tools/visual/README.md) has the details, including the run where it
 catches that exact regression.
 
+### Releasing to Play
+
+`PLAY_TRACK` and `PLAY_RELEASE_STATUS` are repository variables, so where a release lands is a
+settings change rather than a code change. With `PLAY_RELEASE_STATUS=completed`, publishing a
+GitHub release rolls out to production with no Play Console visit.
+
+The deploy workflow builds everything before uploading anything, runs the tests and lint against
+the tag, refuses to publish when `changelogs/<versionCode>.txt` is missing, and validates the
+upload against Play before performing it. `workflow_dispatch` with `dry_run: true` stops after
+validation, which is how to test a pipeline change without consuming a versionCode. A versionCode
+can only ever be uploaded once.
+
+A build already uploaded can't be re-released; it has to be promoted. The "Promote a Play release"
+workflow does that by versionCode, for drafts uploaded before the status variable was set or for
+ramping a staged rollout.
+
 ### Versioning
 
 The user-facing rule is in the README. The mechanics:
