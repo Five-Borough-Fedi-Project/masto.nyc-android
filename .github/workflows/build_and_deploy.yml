@@ -191,12 +191,7 @@ jobs:
           pip install --quiet google-auth
           IFS=. read -r MAJOR MINOR PATCH <<< "${TAG#v}"
           CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
-          python3 tools/play-status.py | tee /tmp/status.txt
-          if ! grep -qE "versionCode .*\b$CODE\b.*status=$WANT" /tmp/status.txt; then
-            echo "::error::versionCode $CODE is not $WANT on $TRACK - see the track listing above"
-            exit 1
-          fi
-          echo "versionCode $CODE is $WANT on $TRACK"
+          python3 tools/play-status.py --expect "internal:$CODE:completed" --expect "$TRACK:$CODE:$WANT"
 
       - name: Upload release apk
         uses: actions/upload-artifact@v4

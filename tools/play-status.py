@@ -5,6 +5,10 @@ Read-only. Creates an edit, reads the tracks, deletes the edit without committin
 changes. Needs the service account JSON in GOOGLE_SERVICE_ACCOUNT_KEY.
 
   python3 tools/play-status.py [package_name]
+  python3 tools/play-status.py --expect internal:1004:completed --expect production:1004:completed
+
+--expect takes track:versionCode:status and exits non-zero unless Play agrees, so a release can
+check what actually landed rather than trusting a tool's exit code.
 """
 import json
 import os
@@ -24,8 +28,30 @@ def call(token, method, url, ok_empty=False):
     return json.loads(body) if body else ({} if ok_empty else None)
 
 
+def check(tracks, expectations):
+    """Returns a list of unmet expectations, each as a readable string."""
+    seen = {}
+    for track in tracks:
+        for rel in track.get("releases", []):
+            for code in rel.get("versionCodes", []):
+                seen[(track["track"], str(code))] = rel.get("status")
+    unmet = []
+    for want in expectations:
+        track, code, status = want.split(":")
+        actual = seen.get((track, code))
+        if actual != status:
+            unmet.append(f"{track}: versionCode {code} is {actual or 'absent'}, expected {status}")
+    return unmet
+
+
 def main():
-    package = sys.argv[1] if len(sys.argv) > 1 else "nyc.masto.android"
+    args = [a for a in sys.argv[1:]]
+    expectations = []
+    while "--expect" in args:
+        i = args.index("--expect")
+        expectations.append(args[i + 1])
+        del args[i:i + 2]
+    package = args[0] if args else "nyc.masto.android"
     key = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_KEY"])
     creds = service_account.Credentials.from_service_account_info(
         key, scopes=["https://www.googleapis.com/auth/androidpublisher"])
@@ -59,6 +85,14 @@ def main():
                 for note in rel.get("releaseNotes", []):
                     first = note.get("text", "").strip().splitlines()[:1]
                     print(f"    notes[{note.get('language')}]: {first[0] if first else ''}")
+        unmet = check(tracks, expectations)
+        if unmet:
+            print("\nPlay does not match what was expected:")
+            for line in unmet:
+                print(f"  {line}")
+            return 1
+        if expectations:
+            print(f"\nAll {len(expectations)} expectation(s) met.")
     finally:
         call(token, "DELETE", f"{API}/{package}/edits/{edit_id}", ok_empty=True)
     return 0
