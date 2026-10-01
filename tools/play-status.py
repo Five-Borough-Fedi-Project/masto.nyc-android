@@ -35,8 +35,15 @@ def main():
     edit = call(token, "POST", f"{API}/{package}/edits")
     edit_id = edit["id"]
     try:
-        tracks = call(token, "GET", f"{API}/{package}/edits/{edit_id}/tracks")
-        for track in tracks.get("track", []):
+        response = call(token, "GET", f"{API}/{package}/edits/{edit_id}/tracks")
+        # The list response holds "tracks"; each entry's own "track" field is its name. Getting
+        # this wrong printed nothing and still exited 0, so say so loudly instead.
+        tracks = response.get("tracks")
+        if not tracks:
+            print(f"No tracks came back for {package}. Raw response:")
+            print(json.dumps(response, indent=2))
+            return 1
+        for track in tracks:
             print(f"\ntrack: {track['track']}")
             releases = track.get("releases", [])
             if not releases:
@@ -54,7 +61,8 @@ def main():
                     print(f"    notes[{note.get('language')}]: {first[0] if first else ''}")
     finally:
         call(token, "DELETE", f"{API}/{package}/edits/{edit_id}", ok_empty=True)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
