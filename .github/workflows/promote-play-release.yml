@@ -82,3 +82,21 @@ jobs:
           PLAY_TRACK: ${{ vars.PLAY_TRACK || 'production' }}
           PLAY_RELEASE_STATUS: ${{ inputs.status }}
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+
+      # fastlane reported success for a promotion that did nothing, so read the tracks back and
+      # fail if the release is not in the status that was asked for.
+      - name: Confirm the status on Play
+        if: ${{ !inputs.dry_run }}
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          CODE: ${{ inputs.version_code }}
+          WANT: ${{ inputs.status }}
+          TRACK: ${{ vars.PLAY_TRACK || 'production' }}
+        run: |
+          pip install --quiet google-auth
+          python3 tools/play-status.py | tee /tmp/status.txt
+          if ! grep -qE "versionCode .*\b$CODE\b.*status=$WANT" /tmp/status.txt; then
+            echo "::error::versionCode $CODE is not $WANT on $TRACK - see the track listing above"
+            exit 1
+          fi
+          echo "versionCode $CODE is $WANT on $TRACK"

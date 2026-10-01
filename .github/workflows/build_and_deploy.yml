@@ -177,6 +177,27 @@ jobs:
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           SUPPLY_SKIP_UPLOAD_METADATA: true
 
+      # fastlane reported success for a promotion that changed nothing, so don't trust the exit
+      # code: read the tracks back and check the release is on the track with the status asked for.
+      - name: Confirm the release on Play
+        if: ${{ !inputs.dry_run }}
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          WANT: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}
+          TRACK: ${{ vars.PLAY_TRACK || 'internal' }}
+        run: |
+          set -euo pipefail
+          pip install --quiet google-auth
+          IFS=. read -r MAJOR MINOR PATCH <<< "${TAG#v}"
+          CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
+          python3 tools/play-status.py | tee /tmp/status.txt
+          if ! grep -qE "versionCode .*\b$CODE\b.*status=$WANT" /tmp/status.txt; then
+            echo "::error::versionCode $CODE is not $WANT on $TRACK - see the track listing above"
+            exit 1
+          fi
+          echo "versionCode $CODE is $WANT on $TRACK"
+
       - name: Upload release apk
         uses: actions/upload-artifact@v4
         with:

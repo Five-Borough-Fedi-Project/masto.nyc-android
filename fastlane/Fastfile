@@ -59,10 +59,16 @@ platform :android do
   # promoted rather than released again. Driven by .github/workflows/promote-play-release.yml.
   desc "Promote a build already on Play to a release status"
   lane :promote do
+    track = ENV["PLAY_TRACK"] || "production"
     upload_to_play_store(
-      track: ENV["PLAY_TRACK"] || "production",
+      track: track,
       version_code: Integer(ENV.fetch("PLAY_VERSION_CODE")),
-      release_status: ENV["PLAY_RELEASE_STATUS"] || "completed",
+      # Changing the status of a release already on a track is a promotion, even when the
+      # destination track is the one it is already on. release_status only applies when a binary
+      # is being uploaded: passing it here reported success and changed nothing, leaving 1004 a
+      # draft on production while fastlane said the upload finished.
+      track_promote_to: track,
+      track_promote_release_status: ENV["PLAY_RELEASE_STATUS"] || "completed",
       validate_only: ENV["PLAY_VALIDATE_ONLY"] == "true",
       skip_upload_aab: true,
       skip_upload_apk: true,
