@@ -13,6 +13,12 @@ on:
       version_code:
         description: "versionCode to promote, e.g. 1004"
         required: true
+      from_track:
+        description: "Track the build is on now"
+        default: production
+      to_track:
+        description: "Track to promote it to"
+        default: production
       status:
         description: "Release status to promote to"
         type: choice
@@ -70,7 +76,8 @@ jobs:
         env:
           PLAY_VALIDATE_ONLY: true
           PLAY_VERSION_CODE: ${{ inputs.version_code }}
-          PLAY_TRACK: ${{ vars.PLAY_TRACK || 'production' }}
+          PLAY_TRACK: ${{ inputs.from_track }}
+          PLAY_PROMOTE_TO: ${{ inputs.to_track }}
           PLAY_RELEASE_STATUS: ${{ inputs.status }}
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
 
@@ -79,7 +86,8 @@ jobs:
         run: bundle exec fastlane promote
         env:
           PLAY_VERSION_CODE: ${{ inputs.version_code }}
-          PLAY_TRACK: ${{ vars.PLAY_TRACK || 'production' }}
+          PLAY_TRACK: ${{ inputs.from_track }}
+          PLAY_PROMOTE_TO: ${{ inputs.to_track }}
           PLAY_RELEASE_STATUS: ${{ inputs.status }}
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
 
@@ -91,12 +99,7 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           CODE: ${{ inputs.version_code }}
           WANT: ${{ inputs.status }}
-          TRACK: ${{ vars.PLAY_TRACK || 'production' }}
+          TRACK: ${{ inputs.to_track }}
         run: |
           pip install --quiet google-auth
-          python3 tools/play-status.py | tee /tmp/status.txt
-          if ! grep -qE "versionCode .*\b$CODE\b.*status=$WANT" /tmp/status.txt; then
-            echo "::error::versionCode $CODE is not $WANT on $TRACK - see the track listing above"
-            exit 1
-          fi
-          echo "versionCode $CODE is $WANT on $TRACK"
+          python3 tools/play-status.py --expect "$TRACK:$CODE:$WANT"

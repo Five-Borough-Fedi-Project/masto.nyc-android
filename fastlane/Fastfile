@@ -27,33 +27,43 @@ platform :android do
       task: "bundle",
       build_type: "release",
     )
-    # Track and status are configurable so going live is a repo-variable change rather than a
-    # code change.
-    #
-    # Defaults are deliberately conservative. Upstream's lane had no track at all, which means
-    # production, and the store listing still carries upstream's screenshots. And until this app
-    # has had one production release, Play treats it as a "draft app" and the API rejects anything
-    # that is not release_status draft, which is the error this replaced.
-    #
-    # Once the listing is ready and a production release exists, set PLAY_TRACK=production and
-    # PLAY_RELEASE_STATUS=completed as repository variables.
+    # masto.nyc fork: internal first, then promote. Internal testers get the build immediately,
+    # with no review wait, which is the only way to check a release on a real phone before the
+    # public sees it. Promotion copies rather than moves (supply's promote_track only writes the
+    # destination track), so internal keeps the build afterwards.
+    validate_only = ENV["PLAY_VALIDATE_ONLY"] == "true"
     upload_to_play_store(
-      track: ENV["PLAY_TRACK"] || "internal",
-      release_status: ENV["PLAY_RELEASE_STATUS"] || "draft",
-      # masto.nyc fork: name the bundle rather than letting supply search for artifacts. It
-      # collects every APK the build produced, and one stray APK next to the bundle fails the
-      # upload with "Cannot provide both apk(s) and aab". That broke the v0.1.3 release.
+      track: "internal",
+      release_status: "completed",
       aab: ENV["AAB_PATH"] || "mastodon/build/outputs/bundle/release/mastodon-release.aab",
       skip_upload_apk: true,
-      # masto.nyc fork: send the mapping so Play Console deobfuscates crashes.
       mapping: ENV["MAPPING_PATH"] || "mastodon/build/outputs/mapping/release/mapping.txt",
-      # masto.nyc fork: PLAY_VALIDATE_ONLY=true checks the upload against Play and publishes
-      # nothing, so the pipeline can be tested without burning a versionCode.
-      validate_only: ENV["PLAY_VALIDATE_ONLY"] == "true",
+      validate_only: validate_only,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    # A validated upload was never created, so there is nothing on internal to promote. The
+    # promotion is exercised by the next real release, and by the promote lane.
+    next if validate_only
+
+    tag = ENV.fetch("RELEASE_TAG")
+    major, minor, patch = tag.delete_prefix("v").split(".").map { |n| Integer(n) }
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: ENV["PLAY_TRACK"] || "production",
+      track_promote_release_status: ENV["PLAY_RELEASE_STATUS"] || "completed",
+      # Internal carries older releases too, so name the one to promote.
+      version_code: major * 1_000_000 + minor * 1_000 + patch,
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
   end
+
   # masto.nyc fork: promotes a build already uploaded to Play, without rebuilding or re-uploading
   # it. A versionCode can only be uploaded once, so a draft that needs to go live has to be
   # promoted rather than released again. Driven by .github/workflows/promote-play-release.yml.
@@ -67,7 +77,7 @@ platform :android do
       # destination track is the one it is already on. release_status only applies when a binary
       # is being uploaded: passing it here reported success and changed nothing, leaving 1004 a
       # draft on production while fastlane said the upload finished.
-      track_promote_to: track,
+      track_promote_to: ENV["PLAY_PROMOTE_TO"] || track,
       track_promote_release_status: ENV["PLAY_RELEASE_STATUS"] || "completed",
       validate_only: ENV["PLAY_VALIDATE_ONLY"] == "true",
       skip_upload_aab: true,
