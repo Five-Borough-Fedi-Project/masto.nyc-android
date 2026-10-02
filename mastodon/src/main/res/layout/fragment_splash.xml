@@ -6,84 +6,57 @@
 	android:layout_height="match_parent"
 	android:fitsSystemWindows="true"
 	android:clipToPadding="false"
+	android:background="#69C0FF"
 	android:theme="@style/Theme.Mastodon.Dark.SplashFragment">
 
-	<View
-		android:id="@+id/blue_fill"
-		android:layout_width="match_parent"
-		android:layout_height="1px"
-		android:layout_gravity="top"
-		android:transformPivotY="0px"
-		android:background="#50D5ED"/>
-
+	<!-- masto.nyc fork: upstream's art is five pieces positioned by hand inside a 360x640dp box,
+	     scaled to the screen width, with flat colour fills above and below it. Ours is four
+	     full-bleed layers drawn at 1440x3040, so they are stacked edge to edge and cropped to
+	     whatever the screen actually is. Each one is 24dp larger than the screen on every side so
+	     the parallax never drags an edge into view. Back to front: sky, skyline, river, riverbank.
+	     A fifth layer is still to come from the artist; nothing here assumes how many there are. -->
 	<FrameLayout
 		android:id="@+id/art_container"
-		android:layout_width="360dp"
-		android:layout_height="640dp"
-		android:layout_gravity="center"
-		tools:ignore="rtlHardcoded">
-		
-		<ImageView
-			android:id="@+id/art_clouds"
-			android:layout_width="414dp"
-			android:layout_height="541dp"
-			android:layout_marginTop="37dp"
-			android:layout_marginLeft="-27dp"
-			android:layout_gravity="top|left"
-			android:alpha="0.3"
-			android:importantForAccessibility="no"
-			android:src="@drawable/splash_art_layer0"/>
+		android:layout_width="match_parent"
+		android:layout_height="match_parent">
 
 		<ImageView
-			android:id="@+id/art_plane_elephant"
-			android:layout_width="245.64dp"
-			android:layout_height="72.65dp"
-			android:layout_marginLeft="-50.775dp"
-			android:layout_marginTop="184.12dp"
-			android:layout_gravity="left|top"
-			android:alpha="0.3"
+			android:id="@+id/art_sky"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_margin="-24dp"
+			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
-			android:src="@drawable/splash_art_layer4"/>
+			android:src="@drawable/splash_art_sky"/>
 
 		<ImageView
-			android:id="@+id/art_right_hill"
-			android:layout_width="150.84dp"
-			android:layout_height="176.44dp"
-			android:layout_gravity="top|left"
-			android:layout_marginLeft="278dp"
-			android:layout_marginTop="244dp"
+			android:id="@+id/art_skyline"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_margin="-24dp"
+			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
-			android:src="@drawable/splash_art_layer1"/>
+			android:src="@drawable/splash_art_skyline"/>
 
 		<ImageView
-			android:id="@+id/art_left_hill"
-			android:layout_width="197.2dp"
-			android:layout_height="153.61dp"
-			android:layout_gravity="top|left"
-			android:layout_marginTop="252dp"
-			android:layout_marginLeft="-44dp"
+			android:id="@+id/art_river"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_margin="-24dp"
+			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
-			android:src="@drawable/splash_art_layer2"/>
+			android:src="@drawable/splash_art_river"/>
 
 		<ImageView
-			android:id="@+id/art_center_hill"
-			android:layout_width="400dp"
-			android:layout_height="346dp"
-			android:layout_gravity="top|left"
-			android:layout_marginTop="240dp"
-			android:layout_marginLeft="-20dp"
+			android:id="@+id/art_foreground"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_margin="-24dp"
+			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
-			android:src="@drawable/splash_art_layer3"/>
+			android:src="@drawable/splash_art_foreground"/>
 
 	</FrameLayout>
-
-	<View
-		android:id="@+id/green_fill"
-		android:layout_width="match_parent"
-		android:layout_height="1px"
-		android:layout_gravity="bottom"
-		android:transformPivotY="1px"
-		android:background="#478E6A"/>
 
 	<LinearLayout
 		android:layout_width="match_parent"
