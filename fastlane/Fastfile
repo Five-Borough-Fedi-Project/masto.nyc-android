@@ -47,6 +47,11 @@ platform :android do
     # promotion is exercised by the next real release, and by the promote lane.
     next if validate_only
 
+    # An internal-only release is the test build path: it goes to the internal testers and stops
+    # there. The upload above already put it on internal as completed, so there is nothing to
+    # promote, and promoting internal to internal would only risk moving a release that is fine.
+    next if (ENV["PLAY_TRACK"] || "production") == "internal"
+
     tag = ENV.fetch("RELEASE_TAG")
     major, minor, patch = tag.delete_prefix("v").split(".").map { |n| Integer(n) }
     upload_to_play_store(
