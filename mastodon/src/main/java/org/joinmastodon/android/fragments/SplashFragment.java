@@ -9,7 +9,6 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
 
 import org.joinmastodon.android.MastodonApp;
@@ -42,9 +41,10 @@ public class SplashFragment extends AppKitFragment{
 	private static final String DEFAULT_SERVER=ForkConfig.INSTANCE_DOMAIN;
 
 	private SizeListenerFrameLayout contentView;
-	private View artContainer, blueFill, greenFill;
+	private View artContainer;
 	private InterpolatingMotionEffect motionEffect;
-	private View artClouds, artPlaneElephant, artRightHill, artLeftHill, artCenterHill;
+	// masto.nyc fork: four full-bleed layers instead of upstream's five positioned pieces.
+	private View artSky, artSkyline, artRiver, artForeground;
 	private ProgressBarButton defaultServerButton;
 	private final String chosenDefaultServer=DEFAULT_SERVER;
 	private boolean checkedInviteLink;
@@ -68,35 +68,19 @@ public class SplashFragment extends AppKitFragment{
 		defaultServerButton.setText(getString(R.string.join_default_server, chosenDefaultServer));
 		defaultServerButton.setOnClickListener(this::onJoinDefaultServerClick);
 
-		artClouds=contentView.findViewById(R.id.art_clouds);
-		artPlaneElephant=contentView.findViewById(R.id.art_plane_elephant);
-		artRightHill=contentView.findViewById(R.id.art_right_hill);
-		artLeftHill=contentView.findViewById(R.id.art_left_hill);
-		artCenterHill=contentView.findViewById(R.id.art_center_hill);
+		artSky=contentView.findViewById(R.id.art_sky);
+		artSkyline=contentView.findViewById(R.id.art_skyline);
+		artRiver=contentView.findViewById(R.id.art_river);
+		artForeground=contentView.findViewById(R.id.art_foreground);
 
 		artContainer=contentView.findViewById(R.id.art_container);
-		blueFill=contentView.findViewById(R.id.blue_fill);
-		greenFill=contentView.findViewById(R.id.green_fill);
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artClouds, V.dp(-5), V.dp(5), V.dp(-5), V.dp(5)));
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artRightHill, V.dp(-15), V.dp(25), V.dp(-10), V.dp(10)));
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artLeftHill, V.dp(-25), V.dp(15), V.dp(-15), V.dp(15)));
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artCenterHill, V.dp(-14), V.dp(14), V.dp(-5), V.dp(25)));
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artPlaneElephant, V.dp(-20), V.dp(12), V.dp(-20), V.dp(12)));
+		// Travel grows with nearness, which is what reads as depth. The 24dp overscan in the
+		// layout is the budget: no layer may move further than that, or its edge comes into view.
+		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artSky, V.dp(-4), V.dp(4), V.dp(-4), V.dp(4)));
+		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artSkyline, V.dp(-8), V.dp(8), V.dp(-6), V.dp(6)));
+		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artRiver, V.dp(-14), V.dp(14), V.dp(-10), V.dp(10)));
+		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artForeground, V.dp(-22), V.dp(22), V.dp(-16), V.dp(16)));
 		artContainer.setOnTouchListener(motionEffect);
-
-		contentView.setSizeListener(new SizeListenerFrameLayout.OnSizeChangedListener(){
-			@Override
-			public void onSizeChanged(int w, int h, int oldw, int oldh){
-				contentView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener(){
-					@Override
-					public boolean onPreDraw(){
-						contentView.getViewTreeObserver().removeOnPreDrawListener(this);
-						updateArtSize(w, h);
-						return true;
-					}
-				});
-			}
-		});
 		if(currentInviteLink!=null)
 			defaultServerButton.setText(getString(R.string.join_server_x_with_invite, currentInviteLink.getHost()));
 		else if(!checkedInviteLink)
@@ -216,15 +200,6 @@ public class SplashFragment extends AppKitFragment{
 				});
 	}
 
-	private void updateArtSize(int w, int h){
-		float scale=w/(float)V.dp(360);
-		artContainer.setScaleX(scale);
-		artContainer.setScaleY(scale);
-		blueFill.setScaleY(artContainer.getBottom()-V.dp(90));
-		greenFill.setScaleY(h-artContainer.getBottom()+V.dp(90));
-	}
-
-
 	@Override
 	public void onApplyWindowInsets(WindowInsets insets){
 		super.onApplyWindowInsets(insets);
@@ -232,8 +207,13 @@ public class SplashFragment extends AppKitFragment{
 		if(bottomInset>0 && bottomInset<V.dp(36)){
 			contentView.setPadding(contentView.getPaddingLeft(), contentView.getPaddingTop(), contentView.getPaddingRight(), V.dp(36));
 		}
-		((ViewGroup.MarginLayoutParams)blueFill.getLayoutParams()).topMargin=-contentView.getPaddingTop();
-		((ViewGroup.MarginLayoutParams)greenFill.getLayoutParams()).bottomMargin=-contentView.getPaddingBottom();
+		// The root insets its children for the system bars, which would leave the art floating
+		// inside a border of the background colour. Cancelling the padding on the art container
+		// alone keeps the layers edge to edge while the buttons stay clear of the bars.
+		ViewGroup.MarginLayoutParams artLp=(ViewGroup.MarginLayoutParams)artContainer.getLayoutParams();
+		artLp.topMargin=-contentView.getPaddingTop();
+		artLp.bottomMargin=-contentView.getPaddingBottom();
+		artContainer.requestLayout();
 	}
 
 	@Override
