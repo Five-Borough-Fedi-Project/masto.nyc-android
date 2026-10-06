@@ -51,7 +51,8 @@ Conflicts should be confined to the files below.
 | `mastodon/src/main/res/layout/fragment_splash.xml` | dropped the server picker and the "Learn more" sheet |
 | `.../fragments/profile/ProfileQrCodeFragment.java`, `res/layout/fragment_profile_qr.xml` | no portrait lock; the code is sized to fit landscape |
 | `.../fragments/HomeFragment.java`, `.../settings/SettingsMainFragment.java`, `.../onboarding/AccountActivationFragment.java` | one account per install, see [below](#one-account-per-install) |
-| `.../fragments/HomeTimelineFragment.java` | the toolbar gear only appears when an update is ready, see [below](#settings-behind-the-profile-tab) |
+| `.../fragments/HomeTimelineFragment.java` | the toolbar gear only appears when an update is ready, and two feed tabs replace the dropdown, see [below](#two-feed-tabs-instead-of-a-dropdown) |
+| `.../fragments/settings/SettingsBehaviorFragment.java` | a "Default feed" setting |
 | `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
 | `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
@@ -121,6 +122,21 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
   unzip -p app.apk $d | strings | grep -c MastodonAndroid
 done
 ```
+
+### Two feed tabs instead of a dropdown
+
+Upstream puts Home, Local, Lists and Followed hashtags behind a dropdown in the home toolbar.
+People on this server switch between the two timelines constantly, so those two are tabs now,
+named NYC Feed and Your Follows, and the other two moved to the search screen.
+
+`FeedTabsView` is a new file in `fork/`. In `HomeTimelineFragment` the delta is the toolbar view,
+which replaces one method, the initial `listMode`, and the line that used to update the dropdown's
+label. Upstream's `ListMode.LIST` paths are untouched and simply unreachable from here, since
+lists have their own fragment.
+
+The home tab opens on the NYC feed, which `ForkPrefs` can change and Settings → Behavior exposes.
+`ForkPrefs` keeps fork settings out of upstream's `GlobalUserPreferences`, in its own
+SharedPreferences file, so neither file conflicts.
 
 ### Settings behind the profile tab
 

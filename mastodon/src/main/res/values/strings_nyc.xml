@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings this fork adds. Overrides of upstream strings go in strings.xml, because Android
+     won't take the same resource name from two files in one source set. See FORK.md. -->
+<resources>
+	<string name="nyc_feed">NYC Feed</string>
+	<string name="your_follows">Your Follows</string>
+	<string name="settings_default_feed">Default feed</string>
+</resources>

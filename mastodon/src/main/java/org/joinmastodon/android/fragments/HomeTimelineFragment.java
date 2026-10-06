@@ -51,6 +51,8 @@ import org.joinmastodon.android.api.requests.timelines.GetPublicTimeline;
 import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.events.DismissDonationCampaignBannerEvent;
 import org.joinmastodon.android.events.SelfUpdateStateChangedEvent;
+import org.joinmastodon.android.fork.FeedTabsView;
+import org.joinmastodon.android.fork.ForkPrefs;
 import org.joinmastodon.android.fragments.settings.SettingsMainFragment;
 import org.joinmastodon.android.model.CacheablePaginatedResponse;
 import org.joinmastodon.android.model.FilterContext;
@@ -97,6 +99,7 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 	private static final int DONATION_RESULT=211;
 
 	private ImageButton fab;
+	private FeedTabsView feedTabs;
 	private LinearLayout listsDropdown;
 	private FixedAspectRatioImageView listsDropdownArrow;
 	private TextView listsDropdownText;
@@ -107,7 +110,9 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 	private ToolbarDropdownMenuController dropdownController;
 	private HomeTimelineMenuController dropdownMainMenuController;
 	private List<FollowList> lists=List.of();
-	private ListMode listMode=ListMode.FOLLOWING;
+	// masto.nyc fork: the NYC feed is the point of this fork, so it opens there unless settings say
+	// otherwise.
+	private ListMode listMode=ForkPrefs.isDefaultFeedLocal() ? ListMode.LOCAL : ListMode.FOLLOWING;
 	private FollowList currentList;
 	private MergeRecyclerAdapter mergeAdapter;
 	private DiscoverInfoBannerHelper localTimelineBannerHelper;
@@ -196,6 +201,9 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 				reload();
 			}
 		}, AccountSessionManager.get(accountID).canAccessLocalTimeline());
+		// masto.nyc fork: a server that won't serve its local timeline leaves one feed to show.
+		if(listMode==ListMode.LOCAL && !AccountSessionManager.get(accountID).canAccessLocalTimeline())
+			listMode=ListMode.FOLLOWING;
 		setHasOptionsMenu(true);
 		loadData();
 		AccountSessionManager.get(accountID).getCacheController().getLists(new Callback<>(){
@@ -672,38 +680,24 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 		super.onRefresh();
 	}
 
+	// masto.nyc fork: two tabs where upstream has a dropdown. Switching between the NYC feed and
+	// your follows is the most common thing people do here, and a dropdown makes it a menu trip.
+	// Lists and followed hashtags, also in that dropdown upstream, move to the search screen.
 	private void updateToolbarLogo(){
-		listsDropdown=new LinearLayout(getActivity());
-		listsDropdown.setOnClickListener(this::onListsDropdownClick);
-		listsDropdown.setBackgroundResource(R.drawable.bg_button_m3_text);
-		listsDropdown.setAccessibilityDelegate(new View.AccessibilityDelegate(){
-			@Override
-			public void onInitializeAccessibilityNodeInfo(@NonNull View host, @NonNull AccessibilityNodeInfo info){
-				super.onInitializeAccessibilityNodeInfo(host, info);
-				info.setClassName("android.widget.Spinner");
-			}
+		feedTabs=new FeedTabsView(getActivity());
+		feedTabs.setLocalSelected(listMode==ListMode.LOCAL);
+		feedTabs.setOnTabSelected(local->{
+			ListMode wanted=local ? ListMode.LOCAL : ListMode.FOLLOWING;
+			if(listMode==wanted)
+				return;
+			listMode=wanted;
+			reload();
 		});
-		listsDropdownArrow=new FixedAspectRatioImageView(getActivity());
-		listsDropdownArrow.setUseHeight(true);
-		listsDropdownArrow.setImageResource(R.drawable.ic_arrow_drop_down_24px);
-		listsDropdownArrow.setScaleType(ImageView.ScaleType.CENTER);
-		listsDropdownArrow.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-		listsDropdown.addView(listsDropdownArrow, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
-		listsDropdownText=new TextView(getActivity());
-		listsDropdownText.setTextAppearance(R.style.action_bar_title);
-		listsDropdownText.setSingleLine();
-		listsDropdownText.setEllipsize(TextUtils.TruncateAt.END);
-		listsDropdownText.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-		listsDropdownText.setPaddingRelative(V.dp(4), 0, V.dp(16), 0);
-		listsDropdownText.setText(getCurrentListTitle());
-		listsDropdownArrow.setImageTintList(listsDropdownText.getTextColors());
-		listsDropdown.setBackgroundTintList(listsDropdownText.getTextColors());
-		listsDropdown.addView(listsDropdownText, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
 		FrameLayout logoWrap=new FrameLayout(getActivity());
-		FrameLayout.LayoutParams ddlp=new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START);
-		ddlp.topMargin=ddlp.bottomMargin=V.dp(8);
-		logoWrap.addView(listsDropdown, ddlp);
+		FrameLayout.LayoutParams tabsLp=new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START);
+		tabsLp.topMargin=tabsLp.bottomMargin=V.dp(8);
+		logoWrap.addView(feedTabs, tabsLp);
 
 		Toolbar toolbar=getToolbar();
 		toolbar.addView(logoWrap, new Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -850,7 +844,8 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 		refreshing=true;
 		showProgress();
 		loadData();
-		listsDropdownText.setText(getCurrentListTitle());
+		if(feedTabs!=null)
+			feedTabs.setLocalSelected(listMode==ListMode.LOCAL);
 		invalidateOptionsMenu();
 	}
 

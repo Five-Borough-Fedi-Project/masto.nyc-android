@@ -13,6 +13,7 @@ import android.widget.TextView;
 import org.joinmastodon.android.GlobalUserPreferences;
 import org.joinmastodon.android.R;
 import org.joinmastodon.android.model.viewmodel.CheckableListItem;
+import org.joinmastodon.android.fork.ForkPrefs;
 import org.joinmastodon.android.model.viewmodel.ListItem;
 import org.joinmastodon.android.ui.M3AlertDialogBuilder;
 
@@ -23,6 +24,8 @@ import androidx.annotation.Nullable;
 
 public class SettingsBehaviorFragment extends BaseSettingsFragment<Void>{
 	private ListItem<Void> customTabsItem;
+	// masto.nyc fork: which feed the home tab opens on
+	private ListItem<Void> defaultFeedItem;
 	private CheckableListItem<Void> altTextItem, playGifsItem, confirmUnfollowItem, confirmBoostItem, confirmDeleteItem;
 
 	@Override
@@ -32,6 +35,8 @@ public class SettingsBehaviorFragment extends BaseSettingsFragment<Void>{
 
 		onDataLoaded(List.of(
 				customTabsItem=new ListItem<>(R.string.settings_custom_tabs, GlobalUserPreferences.useCustomTabs ? R.string.in_app_browser : R.string.system_browser, R.drawable.ic_open_in_browser_24px, this::onCustomTabsClick),
+				// masto.nyc fork: the home tab has two feeds, so which one it opens on is a choice
+				defaultFeedItem=new ListItem<>(R.string.settings_default_feed, ForkPrefs.isDefaultFeedLocal() ? R.string.nyc_feed : R.string.your_follows, R.drawable.ic_home_24px, this::onDefaultFeedClick),
 				altTextItem=new CheckableListItem<>(R.string.settings_alt_text_reminders, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.altTextReminders, R.drawable.ic_alt_24px, this::toggleCheckableItem),
 				playGifsItem=new CheckableListItem<>(R.string.settings_gif, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.playGifs, R.drawable.ic_animation_24px, this::toggleCheckableItem),
 				confirmUnfollowItem=new CheckableListItem<>(R.string.settings_confirm_unfollow, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.confirmUnfollow, R.drawable.ic_person_remove_24px, this::toggleCheckableItem),
@@ -42,6 +47,20 @@ public class SettingsBehaviorFragment extends BaseSettingsFragment<Void>{
 
 	@Override
 	protected void doLoadData(int offset, int count){}
+
+	// masto.nyc fork: see defaultFeedItem.
+	private void onDefaultFeedClick(ListItem<?> item){
+		new M3AlertDialogBuilder(getActivity())
+				.setTitle(R.string.settings_default_feed)
+				.setSingleChoiceItems(new String[]{getString(R.string.nyc_feed), getString(R.string.your_follows)},
+						ForkPrefs.isDefaultFeedLocal() ? 0 : 1, (dlg, which)->{
+							ForkPrefs.setDefaultFeedLocal(which==0);
+							defaultFeedItem.subtitleRes=which==0 ? R.string.nyc_feed : R.string.your_follows;
+							rebindItem(defaultFeedItem);
+							dlg.dismiss();
+						})
+				.show();
+	}
 
 	private void onCustomTabsClick(ListItem<?> item){
 		Intent intent=new Intent(Intent.ACTION_VIEW, Uri.parse("http://example.com"));
