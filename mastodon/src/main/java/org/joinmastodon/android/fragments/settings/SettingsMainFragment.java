@@ -67,8 +67,7 @@ public class SettingsMainFragment extends BaseSettingsFragment<Object>{
 		}
 
 		items.addAll(List.of(
-				new ListItem<>(R.string.settings_add_account, 0, R.drawable.ic_add_24px, this::onAddAccountClick),
-
+				// masto.nyc fork: no "add account" item, this fork is one account per install
 				new SectionHeaderListItem(R.string.settings_app_settings),
 				new ListItem<>(R.string.settings_behavior, 0, R.drawable.ic_tune_24px, this::onBehaviorClick),
 				new ListItem<>(R.string.settings_display, 0, R.drawable.ic_style_24px, this::onDisplayClick)

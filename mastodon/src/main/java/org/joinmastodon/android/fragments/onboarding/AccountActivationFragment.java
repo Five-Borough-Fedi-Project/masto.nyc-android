@@ -25,7 +25,6 @@ import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.fragments.settings.SettingsMainFragment;
 import org.joinmastodon.android.model.Account;
 import org.joinmastodon.android.model.Instance;
-import org.joinmastodon.android.ui.sheets.AccountSwitcherSheet;
 import org.joinmastodon.android.ui.utils.UiUtils;
 
 import java.io.File;
@@ -98,11 +97,6 @@ public class AccountActivationFragment extends ToolbarFragment{
 	@Override
 	protected boolean canGoBack(){
 		return true;
-	}
-
-	@Override
-	public void onToolbarNavigationClick(){
-		new AccountSwitcherSheet(getActivity(), null).show();
 	}
 
 	@Override
