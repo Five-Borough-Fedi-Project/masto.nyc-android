@@ -50,6 +50,7 @@ Conflicts should be confined to the files below.
 | `mastodon/src/main/res/values/urls.xml` | `github_url`, `privacy_policy_url` |
 | `mastodon/src/main/res/layout/fragment_splash.xml` | dropped the server picker and the "Learn more" sheet |
 | `.../fragments/profile/ProfileQrCodeFragment.java`, `res/layout/fragment_profile_qr.xml` | no portrait lock; the code is sized to fit landscape |
+| `.../fragments/HomeFragment.java`, `.../settings/SettingsMainFragment.java`, `.../onboarding/AccountActivationFragment.java` | one account per install, see [below](#one-account-per-install) |
 | `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
 | `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
@@ -119,6 +120,16 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
   unzip -p app.apk $d | strings | grep -c MastodonAndroid
 done
 ```
+
+### One account per install
+
+This fork is locked to one server and one account, so the account switcher and "add account" are
+unreachable: the long press on the profile tab, the "Add account..." row in settings, and the back
+arrow on the email activation screen, which opened the switcher during signup.
+
+`AccountSwitcherSheet` and the multi-account support in `AccountSessionManager` are untouched.
+Nothing navigates to them, which keeps the delta to three removed call sites rather than a rewrite
+of session handling, and keeps upstream merges clean.
 
 ### Patched appkit
 

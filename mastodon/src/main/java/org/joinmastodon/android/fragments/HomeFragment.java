@@ -25,7 +25,6 @@ import org.joinmastodon.android.R;
 import org.joinmastodon.android.api.requests.notifications.GetNotificationsV1;
 import org.joinmastodon.android.api.requests.notifications.GetUnreadNotificationsCount;
 import org.joinmastodon.android.api.session.AccountLocalPreferences;
-import org.joinmastodon.android.api.session.AccountSession;
 import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.events.NotificationsMarkerUpdatedEvent;
 import org.joinmastodon.android.events.SelfAccountUpdatedEvent;
@@ -38,13 +37,11 @@ import org.joinmastodon.android.model.Instance;
 import org.joinmastodon.android.model.Notification;
 import org.joinmastodon.android.model.NotificationType;
 import org.joinmastodon.android.ui.OutlineProviders;
-import org.joinmastodon.android.ui.sheets.AccountSwitcherSheet;
 import org.joinmastodon.android.ui.utils.UiUtils;
 import org.joinmastodon.android.ui.views.TabBar;
 import org.joinmastodon.android.utils.ObjectIdComparator;
 import org.parceler.Parcels;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -263,14 +260,8 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 	}
 
 	private boolean onTabLongClick(@IdRes int tab){
-		if(tab==R.id.tab_profile){
-			ArrayList<String> options=new ArrayList<>();
-			for(AccountSession session:AccountSessionManager.getInstance().getLoggedInAccounts()){
-				options.add(session.self.displayName+"\n("+session.self.username+"@"+session.getUsernameDomain()+")");
-			}
-			new AccountSwitcherSheet(getActivity(), this).show();
-			return true;
-		}
+		// masto.nyc fork: one account per install, so no account switcher here. A long press on the
+		// profile tab gets its own menu in a later change.
 		if(tab==R.id.tab_home && BuildConfig.DEBUG){
 			Bundle args=new Bundle();
 			args.putString("account", accountID);
