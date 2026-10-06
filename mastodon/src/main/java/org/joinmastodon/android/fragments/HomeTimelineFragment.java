@@ -694,14 +694,10 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 			reload();
 		});
 
-		FrameLayout logoWrap=new FrameLayout(getActivity());
-		FrameLayout.LayoutParams tabsLp=new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START);
-		tabsLp.topMargin=tabsLp.bottomMargin=V.dp(8);
-		logoWrap.addView(feedTabs, tabsLp);
-
 		Toolbar toolbar=getToolbar();
-		toolbar.addView(logoWrap, new Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-		toolbar.setContentInsetsRelative(V.dp(16), 0);
+		toolbar.addView(feedTabs, new Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+		// The tabs are the whole bar, so they start at the edge rather than at the title inset.
+		toolbar.setContentInsetsRelative(0, 0);
 	}
 
 	private void showNewPostsButton(){
