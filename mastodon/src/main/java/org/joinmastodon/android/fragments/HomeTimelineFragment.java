@@ -353,8 +353,10 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 		GithubSelfUpdater updater=GithubSelfUpdater.getInstance();
 		if(updater!=null)
 			state=updater.getState();
-		if(state!=GithubSelfUpdater.UpdateState.NO_UPDATE && state!=GithubSelfUpdater.UpdateState.CHECKING)
-			getToolbar().getMenu().findItem(R.id.settings).setIcon(R.drawable.ic_settings_updateready_24px);
+		// masto.nyc fork: settings lives behind a long press on the profile tab, so the gear is gone
+		// from the toolbar. It comes back only as the self updater's "update ready" indicator, which
+		// otherwise has nowhere to show itself. Only github builds have an updater at all.
+		setSettingsItemUpdateState(menu, state);
 
 		if("debug".equals(BuildConfig.BUILD_TYPE)){
 			menu.add(0, 1, 0, "Make a gap");
@@ -792,8 +794,18 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 	}
 
 	private void updateUpdateState(GithubSelfUpdater.UpdateState state){
-		if(state!=GithubSelfUpdater.UpdateState.NO_UPDATE && state!=GithubSelfUpdater.UpdateState.CHECKING)
-			getToolbar().getMenu().findItem(R.id.settings).setIcon(R.drawable.ic_settings_updateready_24px);
+		setSettingsItemUpdateState(getToolbar().getMenu(), state);
+	}
+
+	// masto.nyc fork: see onCreateOptionsMenu.
+	private void setSettingsItemUpdateState(Menu menu, GithubSelfUpdater.UpdateState state){
+		MenuItem item=menu.findItem(R.id.settings);
+		if(item==null)
+			return;
+		boolean updateReady=state!=GithubSelfUpdater.UpdateState.NO_UPDATE && state!=GithubSelfUpdater.UpdateState.CHECKING;
+		item.setVisible(updateReady);
+		if(updateReady)
+			item.setIcon(R.drawable.ic_settings_updateready_24px);
 	}
 
 	@Subscribe
