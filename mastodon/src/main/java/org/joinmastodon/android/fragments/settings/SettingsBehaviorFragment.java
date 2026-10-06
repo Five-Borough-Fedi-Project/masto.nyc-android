@@ -13,6 +13,7 @@ import android.widget.TextView;
 import org.joinmastodon.android.GlobalUserPreferences;
 import org.joinmastodon.android.R;
 import org.joinmastodon.android.model.viewmodel.CheckableListItem;
+import org.joinmastodon.android.fork.ForkPrefs;
 import org.joinmastodon.android.model.viewmodel.ListItem;
 import org.joinmastodon.android.ui.M3AlertDialogBuilder;
 
@@ -23,6 +24,8 @@ import androidx.annotation.Nullable;
 
 public class SettingsBehaviorFragment extends BaseSettingsFragment<Void>{
 	private ListItem<Void> customTabsItem;
+	// masto.nyc fork: which tab the app opens on
+	private ListItem<Void> openingTabItem;
 	private CheckableListItem<Void> altTextItem, playGifsItem, confirmUnfollowItem, confirmBoostItem, confirmDeleteItem;
 
 	@Override
@@ -32,6 +35,8 @@ public class SettingsBehaviorFragment extends BaseSettingsFragment<Void>{
 
 		onDataLoaded(List.of(
 				customTabsItem=new ListItem<>(R.string.settings_custom_tabs, GlobalUserPreferences.useCustomTabs ? R.string.in_app_browser : R.string.system_browser, R.drawable.ic_open_in_browser_24px, this::onCustomTabsClick),
+				// masto.nyc fork: Neighbors or Home on launch
+				openingTabItem=new ListItem<>(R.string.settings_opening_tab, ForkPrefs.opensOnNeighbors() ? R.string.tab_neighbors : R.string.tab_home, R.drawable.ic_location_city_24px, this::onOpeningTabClick),
 				altTextItem=new CheckableListItem<>(R.string.settings_alt_text_reminders, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.altTextReminders, R.drawable.ic_alt_24px, this::toggleCheckableItem),
 				playGifsItem=new CheckableListItem<>(R.string.settings_gif, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.playGifs, R.drawable.ic_animation_24px, this::toggleCheckableItem),
 				confirmUnfollowItem=new CheckableListItem<>(R.string.settings_confirm_unfollow, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.confirmUnfollow, R.drawable.ic_person_remove_24px, this::toggleCheckableItem),
@@ -42,6 +47,21 @@ public class SettingsBehaviorFragment extends BaseSettingsFragment<Void>{
 
 	@Override
 	protected void doLoadData(int offset, int count){}
+
+	// masto.nyc fork: see openingTabItem. Takes effect on the next launch, since the tab is chosen
+	// when HomeFragment is created.
+	private void onOpeningTabClick(ListItem<?> item){
+		new M3AlertDialogBuilder(getActivity())
+				.setTitle(R.string.settings_opening_tab)
+				.setSingleChoiceItems(new String[]{getString(R.string.tab_neighbors), getString(R.string.tab_home)},
+						ForkPrefs.opensOnNeighbors() ? 0 : 1, (dlg, which)->{
+							ForkPrefs.setOpensOnNeighbors(which==0);
+							openingTabItem.subtitleRes=which==0 ? R.string.tab_neighbors : R.string.tab_home;
+							rebindItem(openingTabItem);
+							dlg.dismiss();
+						})
+				.show();
+	}
 
 	private void onCustomTabsClick(ListItem<?> item){
 		Intent intent=new Intent(Intent.ACTION_VIEW, Uri.parse("http://example.com"));

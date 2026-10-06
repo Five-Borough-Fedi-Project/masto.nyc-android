@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- masto.nyc fork: PLACEHOLDER for the Neighbors tab. Waiting on 5BFP pigeon artwork; this is a
+     bird silhouette standing in so the tab is usable, and is not meant to ship. Replace this file
+     and ic_pigeon_fill1_24px.xml, keeping the names, and nothing else needs to change. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+	android:width="24dp"
+	android:height="24dp"
+	android:viewportWidth="960"
+	android:viewportHeight="960">
+	<path
+		android:fillColor="@android:color/white"
+		android:pathData="M640,200q-25,0 -42.5,-17.5T580,140q0,-25 17.5,-42.5T640,80q25,0 42.5,17.5T700,140q0,25 -17.5,42.5T640,200ZM420,880q-108,0 -184,-76T160,620v-60q0,-83 58.5,-141.5T360,360h40l120,-120q23,-23 51.5,-31.5T630,208l210,52 -210,52v108q0,66 -47,113t-113,47h-60v40q0,108 -76,184t-184,76h170ZM240,560h240q33,0 56.5,-23.5T560,480v-40H360q-50,0 -85,35t-35,85Z"/>
+</vector>

@@ -51,7 +51,8 @@ Conflicts should be confined to the files below.
 | `mastodon/src/main/res/layout/fragment_splash.xml` | dropped the server picker and the "Learn more" sheet |
 | `.../fragments/profile/ProfileQrCodeFragment.java`, `res/layout/fragment_profile_qr.xml` | no portrait lock; the code is sized to fit landscape |
 | `.../fragments/HomeFragment.java`, `.../settings/SettingsMainFragment.java`, `.../onboarding/AccountActivationFragment.java` | one account per install, see [below](#one-account-per-install) |
-| `.../fragments/HomeTimelineFragment.java` | the toolbar gear only appears when an update is ready, see [below](#settings-behind-the-profile-tab) |
+| `.../fragments/HomeTimelineFragment.java` | the toolbar gear only appears when an update is ready, and the dropdown is gone, see [below](#neighbors-is-its-own-tab) |
+| `res/layout/tab_bar.xml`, `.../fragments/settings/SettingsBehaviorFragment.java` | the Neighbors tab and which tab opens, see [below](#neighbors-is-its-own-tab) |
 | `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
 | `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
@@ -121,6 +122,28 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
   unzip -p app.apk $d | strings | grep -c MastodonAndroid
 done
 ```
+
+### Neighbors is its own tab
+
+Upstream puts Home, Local, Lists and Followed hashtags behind a dropdown in the home toolbar. The
+local timeline is what this fork is for, so it has its own tab at the left of the bottom bar,
+called Neighbors, and the toolbar just names whichever timeline you are on. Lists and followed
+hashtags move to the search screen.
+
+Both tabs are `HomeTimelineFragment`; the Neighbors one gets a `localOnly` argument. That has to
+be read in `onAttach`, before upstream's `loadData()` call there, or the tab loads the home
+timeline instead. `HomeFragment` adds the second fragment, hides whichever tab isn't opening, and
+forwards window insets to it, which it otherwise does not get and its toolbar lands under the
+status bar.
+
+The app opens on Neighbors, which Settings > Behavior > "Opening tab" can change. `ForkPrefs`
+keeps that out of upstream's `GlobalUserPreferences`, in its own SharedPreferences file, so
+neither file conflicts.
+
+The home tab's icon is Material's `location_city`, which has no distinct filled variant, so the
+selected state reads through the tab colours. The Neighbors icon is **a placeholder** until 5BFP
+pigeon artwork lands: replace `ic_pigeon_24px.xml` and `ic_pigeon_fill1_24px.xml`, keeping the
+names.
 
 ### Settings behind the profile tab
 

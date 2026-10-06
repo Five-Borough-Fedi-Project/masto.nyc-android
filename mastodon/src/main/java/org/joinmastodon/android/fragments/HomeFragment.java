@@ -2,6 +2,7 @@ package org.joinmastodon.android.fragments;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.app.NotificationManager;
 import android.app.assist.AssistContent;
 import android.os.Build;
@@ -30,6 +31,7 @@ import org.joinmastodon.android.events.NotificationsMarkerUpdatedEvent;
 import org.joinmastodon.android.events.SelfAccountUpdatedEvent;
 import org.joinmastodon.android.events.StatusDisplaySettingsChangedEvent;
 import org.joinmastodon.android.fragments.discover.DiscoverFragment;
+import org.joinmastodon.android.fork.ForkPrefs;
 import org.joinmastodon.android.fork.ProfileTabMenuSheet;
 import org.joinmastodon.android.fragments.onboarding.OnboardingFollowSuggestionsFragment;
 import org.joinmastodon.android.fragments.profile.ProfileFragment;
@@ -62,6 +64,7 @@ import me.grishka.appkit.views.FragmentRootLinearLayout;
 public class HomeFragment extends AppKitFragment implements AssistContentProviderFragment{
 	private FragmentRootLinearLayout content;
 	private HomeTimelineFragment homeTimelineFragment;
+	private HomeTimelineFragment neighborsTimelineFragment;
 	private NotificationsListFragment notificationsFragment;
 	private DiscoverFragment searchFragment;
 	private ProfileFragment profileFragment;
@@ -69,7 +72,8 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 	private View tabBarWrap;
 	private ImageView tabBarAvatar;
 	@IdRes
-	private int currentTab=R.id.tab_home;
+	// masto.nyc fork: which tab the app opens on, Neighbors unless settings say otherwise
+	private int currentTab=ForkPrefs.opensOnNeighbors() ? R.id.tab_neighbors : R.id.tab_home;
 	private TextView notificationsBadge;
 
 	private String accountID;
@@ -86,8 +90,18 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 		if(savedInstanceState==null){
 			Bundle args=new Bundle();
 			args.putString("account", accountID);
+			if(ForkPrefs.opensOnNeighbors())
+				args.putBoolean("noAutoLoad", true);
 			homeTimelineFragment=new HomeTimelineFragment();
 			homeTimelineFragment.setArguments(args);
+			// masto.nyc fork: the local timeline has its own tab, so a second instance of the same
+			// fragment pinned to it. "noAutoLoad" keeps it from loading until the tab is opened.
+			Bundle neighborsArgs=new Bundle(args);
+			neighborsArgs.putBoolean("localOnly", true);
+			if(!ForkPrefs.opensOnNeighbors())
+				neighborsArgs.putBoolean("noAutoLoad", true);
+			neighborsTimelineFragment=new HomeTimelineFragment();
+			neighborsTimelineFragment.setArguments(neighborsArgs);
 			args=new Bundle(args);
 			args.putBoolean("noAutoLoad", true);
 			searchFragment=new DiscoverFragment();
@@ -135,12 +149,16 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 		notificationsBadge.setVisibility(View.GONE);
 
 		if(savedInstanceState==null){
-			getChildFragmentManager().beginTransaction()
+			FragmentTransaction transaction=getChildFragmentManager().beginTransaction()
 					.add(me.grishka.appkit.R.id.fragment_wrap, homeTimelineFragment)
+					// masto.nyc fork: the Neighbors tab's timeline
+					.add(me.grishka.appkit.R.id.fragment_wrap, neighborsTimelineFragment)
 					.add(me.grishka.appkit.R.id.fragment_wrap, searchFragment).hide(searchFragment)
 					.add(me.grishka.appkit.R.id.fragment_wrap, notificationsFragment).hide(notificationsFragment)
-					.add(me.grishka.appkit.R.id.fragment_wrap, profileFragment).hide(profileFragment)
-					.commit();
+					.add(me.grishka.appkit.R.id.fragment_wrap, profileFragment).hide(profileFragment);
+			// masto.nyc fork: both timelines are added, so hide whichever isn't the opening tab
+			transaction.hide(currentTab==R.id.tab_neighbors ? homeTimelineFragment : neighborsTimelineFragment);
+			transaction.commit();
 
 			String defaultTab=getArguments().getString("tab");
 			if("notifications".equals(defaultTab)){
@@ -166,6 +184,7 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 		if(savedInstanceState==null || homeTimelineFragment!=null)
 			return;
 		homeTimelineFragment=(HomeTimelineFragment) getChildFragmentManager().getFragment(savedInstanceState, "homeTimelineFragment");
+		neighborsTimelineFragment=(HomeTimelineFragment) getChildFragmentManager().getFragment(savedInstanceState, "neighborsTimelineFragment");
 		searchFragment=(DiscoverFragment) getChildFragmentManager().getFragment(savedInstanceState, "searchFragment");
 		notificationsFragment=(NotificationsListFragment) getChildFragmentManager().getFragment(savedInstanceState, "notificationsFragment");
 		profileFragment=(ProfileFragment) getChildFragmentManager().getFragment(savedInstanceState, "profileFragment");
@@ -174,6 +193,7 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 		Fragment current=fragmentForTab(currentTab);
 		getChildFragmentManager().beginTransaction()
 				.hide(homeTimelineFragment)
+				.hide(neighborsTimelineFragment)
 				.hide(searchFragment)
 				.hide(notificationsFragment)
 				.hide(profileFragment)
@@ -209,13 +229,18 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 		}
 		WindowInsets topOnlyInsets=insets.replaceSystemWindowInsets(0, insets.getSystemWindowInsetTop(), 0, 0);
 		homeTimelineFragment.onApplyWindowInsets(topOnlyInsets);
+		// masto.nyc fork: the Neighbors timeline needs the top inset too, or its toolbar sits
+		// under the status bar.
+		neighborsTimelineFragment.onApplyWindowInsets(topOnlyInsets);
 		searchFragment.onApplyWindowInsets(topOnlyInsets);
 		notificationsFragment.onApplyWindowInsets(topOnlyInsets);
 		profileFragment.onApplyWindowInsets(topOnlyInsets);
 	}
 
 	private Fragment fragmentForTab(@IdRes int tab){
-		if(tab==R.id.tab_home){
+		if(tab==R.id.tab_neighbors){
+			return neighborsTimelineFragment;
+		}else if(tab==R.id.tab_home){
 			return homeTimelineFragment;
 		}else if(tab==R.id.tab_search){
 			return searchFragment;
@@ -280,6 +305,7 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 		super.onSaveInstanceState(outState);
 		outState.putInt("selectedTab", currentTab);
 		getChildFragmentManager().putFragment(outState, "homeTimelineFragment", homeTimelineFragment);
+		getChildFragmentManager().putFragment(outState, "neighborsTimelineFragment", neighborsTimelineFragment);
 		getChildFragmentManager().putFragment(outState, "searchFragment", searchFragment);
 		getChildFragmentManager().putFragment(outState, "notificationsFragment", notificationsFragment);
 		getChildFragmentManager().putFragment(outState, "profileFragment", profileFragment);
