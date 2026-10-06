@@ -51,6 +51,7 @@ Conflicts should be confined to the files below.
 | `mastodon/src/main/res/layout/fragment_splash.xml` | dropped the server picker and the "Learn more" sheet |
 | `.../fragments/profile/ProfileQrCodeFragment.java`, `res/layout/fragment_profile_qr.xml` | no portrait lock; the code is sized to fit landscape |
 | `.../fragments/HomeFragment.java`, `.../settings/SettingsMainFragment.java`, `.../onboarding/AccountActivationFragment.java` | one account per install, see [below](#one-account-per-install) |
+| `.../fragments/HomeTimelineFragment.java` | the toolbar gear only appears when an update is ready, see [below](#settings-behind-the-profile-tab) |
 | `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
 | `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
@@ -120,6 +121,16 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
   unzip -p app.apk $d | strings | grep -c MastodonAndroid
 done
 ```
+
+### Settings behind the profile tab
+
+The gear is out of the home toolbar: settings and log out are behind a long press on the profile
+tab, where upstream put the account switcher. `ProfileTabMenuSheet` is a new file in `fork/`, so
+the upstream delta is the long press in `HomeFragment` and the gear's visibility in
+`HomeTimelineFragment`.
+
+The gear still appears there for one reason: the self updater uses it to show that an update is
+ready, and github builds have nowhere else to say so. It is hidden until then.
 
 ### One account per install
 

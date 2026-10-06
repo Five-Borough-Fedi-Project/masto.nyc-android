@@ -30,6 +30,7 @@ import org.joinmastodon.android.events.NotificationsMarkerUpdatedEvent;
 import org.joinmastodon.android.events.SelfAccountUpdatedEvent;
 import org.joinmastodon.android.events.StatusDisplaySettingsChangedEvent;
 import org.joinmastodon.android.fragments.discover.DiscoverFragment;
+import org.joinmastodon.android.fork.ProfileTabMenuSheet;
 import org.joinmastodon.android.fragments.onboarding.OnboardingFollowSuggestionsFragment;
 import org.joinmastodon.android.fragments.profile.ProfileFragment;
 import org.joinmastodon.android.model.Account;
@@ -260,8 +261,12 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 	}
 
 	private boolean onTabLongClick(@IdRes int tab){
-		// masto.nyc fork: one account per install, so no account switcher here. A long press on the
-		// profile tab gets its own menu in a later change.
+		// masto.nyc fork: upstream opens the account switcher here. One account per install, so the
+		// long press carries settings and log out instead, and the toolbar loses its gear.
+		if(tab==R.id.tab_profile){
+			ProfileTabMenuSheet.show(getActivity(), accountID);
+			return true;
+		}
 		if(tab==R.id.tab_home && BuildConfig.DEBUG){
 			Bundle args=new Bundle();
 			args.putString("account", accountID);
