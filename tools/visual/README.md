@@ -37,7 +37,10 @@ anything the server decides**. Three of these were recorded, failed on the very 
 to be re-cropped:
 
 - `profile-tab-menu` was tall enough to catch the timeline behind the sheet, and a post arrived
-  mid-run.
+  mid-run. Shortening it was not enough: a fixed height still has to guess where the sheet starts,
+  and guessing ten pixels high let a strip of timeline back in, which then passed twice and failed
+  on the third run. It is cropped from the Settings row's own position now, so it cannot include
+  anything above the sheet whatever the sheet's height turns out to be.
 - `fork-tab-icons` reached far enough along the bar to include the notifications badge.
 - `followed-hashtags` reached into upstream's trending list, where every row carries a live
   "N people are talking".
@@ -46,8 +49,9 @@ There is no landscape golden of the QR dialog, which is the screen the orientati
 actually about, because its particle animation never settles and no strip of it is reproducible.
 `QrCodeLayoutTest` measures that screen in landscape instead, where nothing is animating.
 
-Always run without `--record` after recording. Goldens that cannot reproduce themselves on the
-very next run are worse than no goldens at all.
+Always run without `--record` after recording, more than once. Goldens that cannot reproduce
+themselves are worse than no goldens at all, and one clean run does not prove it: the sheet crop
+above passed twice before it failed.
 
 Goldens are per API level, under `goldens/api<N>/`, because the platform draws the bars
 differently across versions: that difference is the point. They were recorded at 1080x2400 on

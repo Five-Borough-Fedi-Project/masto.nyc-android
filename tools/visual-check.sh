@@ -144,9 +144,17 @@ check_screens(){
 	# the toolbar gear was removed.
 	app_restart
 	if long_press "My profile" && ui_wait "Settings" 5; then
-		# The sheet only. A taller crop catches the timeline behind it, and a new post arriving
-		# during the run then fails the check for no reason; that happened on the first pass.
-		shot "profile-tab-menu$suffix" "0,$((SH-520)),$SW,520"
+		# Cropped from just above the Settings row down to the bottom of the screen, rather than a
+		# fixed height. A fixed height has to guess where the sheet starts, and guessing a little
+		# high catches a strip of the timeline behind it, which changes whenever a post arrives.
+		# That slipped through twice before failing on a later run.
+		read -r _ settings_top _ _ <<<"$(ui_bounds "Settings")"
+		if [ -n "${settings_top:-}" ]; then
+			crop_top=$((settings_top-48))
+			shot "profile-tab-menu$suffix" "0,$crop_top,$SW,$((SH-crop_top))"
+		else
+			echo "  ! couldn't locate the Settings row; skipping profile-tab-menu$suffix"
+		fi
 		"$adb" shell input keyevent KEYCODE_BACK
 		sleep 1
 	else
