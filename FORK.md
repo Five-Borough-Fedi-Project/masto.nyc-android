@@ -286,9 +286,16 @@ words.
 The key is a secret, so that script cannot be run end to end on a laptop, which is a good way to
 ship a tool that has never worked. `--check` reads the API's unauthenticated discovery document
 and fails if the script sends a parameter the API doesn't accept or reads a field it doesn't
-return; CI runs it on every PR. Writing it caught three real mistakes before the first live call,
-the worst being a missing `sampleErrorReportLimit`, which defaults to 0 and would have returned
-every stack trace empty.
+return; CI runs it on every PR, across both endpoints it calls. Writing it caught three real
+mistakes before the first live call, the worst being a missing `sampleErrorReportLimit`, which
+defaults to 0 and would have returned every stack trace empty.
+
+An empty result is the awkward case, because it looks exactly like a query that is simply wrong.
+`--diagnose` separates the two: it asks Play four progressively broader questions, ending at raw
+error reports, which are not aggregated and not subject to the small-audience threshold. If every
+one of them is empty then Play has no error data for this app, which is the expected answer for
+something on the internal track with a handful of testers. The first real crash that lands in it
+is the only thing that will prove the reader works end to end.
 
 ### Releasing to Play
 

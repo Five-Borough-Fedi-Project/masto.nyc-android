@@ -16,7 +16,7 @@ on:
         description: Which to list
         type: choice
         default: crashes
-        options: [crashes, anrs]
+        options: [crashes, anrs, diagnose]
   schedule:
     # Mondays, 14:00 UTC. Play aggregates with a delay, so there is no point running it at midnight.
     - cron: "0 14 * * 1"
@@ -41,7 +41,10 @@ jobs:
         run: |
           set -euo pipefail
           args=(--days "$DAYS")
-          [ "$KIND" = anrs ] && args+=(--anrs)
+          case "$KIND" in
+            anrs) args+=(--anrs);;
+            diagnose) args+=(--diagnose);;
+          esac
           python3 tools/play-crashes.py "${args[@]}" | tee crashes.txt
           # The summary is what you see from the Actions list without opening the run.
           {

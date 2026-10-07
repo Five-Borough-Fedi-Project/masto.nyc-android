@@ -11,6 +11,7 @@ in Play Console; the androidpublisher permission the release pipeline uses is no
   python3 tools/play-crashes.py --anrs               # ANRs instead of crashes
   python3 tools/play-crashes.py --dry-run            # print the request and stop, no credentials
   python3 tools/play-crashes.py --check              # check the request against Google's schema
+  python3 tools/play-crashes.py --diagnose           # why is it empty: no data, or a bad query?
 
 This exists because a crash was reported from a real phone, could not be reproduced by hand, and
 the only evidence available was the reporter's description. Play had the stack trace the whole
@@ -25,7 +26,10 @@ errorReportCount, an OsVersion.versionString that doesn't exist, and, worst, a m
 sampleErrorReportLimit, which defaults to 0 and would have made every stack trace come back empty.
 
 Play aggregates with a few hours' delay and withholds data for very small audiences, so an empty
-result is not proof there were no crashes.
+result is not proof there were no crashes. That makes an empty result ambiguous in the worst way:
+it looks identical to a query that is simply wrong. --diagnose is for telling those apart. It asks
+four progressively broader questions, down to "does this app have any error data at all", and the
+first one that answers says where the emptiness comes from.
 """
 import json
 import os
@@ -39,11 +43,13 @@ API = "https://playdeveloperreporting.googleapis.com/v1beta1"
 DISCOVERY = "https://playdeveloperreporting.googleapis.com/$discovery/rest?version=v1beta1"
 SCOPE = "https://www.googleapis.com/auth/playdeveloperreporting"
 SEARCH_METHOD = "playdeveloperreporting.vitals.errors.issues.search"
+REPORTS_METHOD = "playdeveloperreporting.vitals.errors.reports.search"
 
 # Every response field this script reads, as schema name -> fields. --check holds these against
 # the API's own declaration, so an upstream rename fails here rather than printing a blank column.
 READS = {
     "SearchErrorIssuesResponse": ["errorIssues"],
+    "SearchErrorReportsResponse": ["errorReports"],
     "ErrorIssue": ["type", "cause", "location", "errorReportCount", "distinctUsers",
                    "firstAppVersion", "lastAppVersion", "sampleErrorReports", "issueUri",
                    "lastErrorReportTime"],
@@ -100,32 +106,34 @@ def request_params(kind, days, limit):
     return params
 
 
-def check_against_discovery(params):
-    """Holds the request, and the fields READS names, against the API's published schema."""
+def check_against_discovery(params, report_params):
+    """Holds the requests, and the fields READS names, against the API's published schema."""
     with urllib.request.urlopen(DISCOVERY) as r:
         doc = json.loads(r.read())
 
-    def find_method(resources):
+    def find_method(resources, wanted):
         for resource in resources.values():
             for method in (resource.get("methods") or {}).values():
-                if method["id"] == SEARCH_METHOD:
+                if method["id"] == wanted:
                     return method
-            found = find_method(resource.get("resources") or {})
+            found = find_method(resource.get("resources") or {}, wanted)
             if found:
                 return found
         return None
 
-    method = find_method(doc["resources"])
-    if not method:
-        print(f"the API no longer declares {SEARCH_METHOD}", file=sys.stderr)
-        return 1
-
     problems = []
-    declared = set(method.get("parameters", {}))
-    for name in params:
-        if name not in declared:
-            problems.append(f"sends {name!r}, which {SEARCH_METHOD} does not accept")
-    print(f"request:  {len(params)} parameters checked")
+    checked = 0
+    for wanted, sent in ((SEARCH_METHOD, params), (REPORTS_METHOD, report_params)):
+        method = find_method(doc["resources"], wanted)
+        if not method:
+            problems.append(f"calls {wanted}, which the API no longer declares")
+            continue
+        declared = set(method.get("parameters", {}))
+        for name in sent:
+            if name not in declared:
+                problems.append(f"sends {name!r}, which {wanted} does not accept")
+        checked += len(sent)
+    print(f"request:  {checked} parameters across 2 methods checked")
 
     schemas = {name.split("1beta1")[-1]: body for name, body in doc["schemas"].items()}
     for schema, fields in READS.items():
@@ -180,6 +188,40 @@ def print_issue(issue, token):
         print(f"  in Play Console: {issue['issueUri']}")
 
 
+def diagnose(token, package, days):
+    """Walks from the narrowest query out to the broadest, to locate where the data stops."""
+    base = dict(interval(days))
+    base["pageSize"] = 1
+    probes = [
+        ("crashes", "errorIssues", dict(base, **{"filter": "errorIssueType = CRASH",
+                                                 "sampleErrorReportLimit": 1}), "errorIssues"),
+        ("ANRs", "errorIssues", dict(base, **{"filter": "errorIssueType = ANR",
+                                              "sampleErrorReportLimit": 1}), "errorIssues"),
+        ("issues of any type", "errorIssues", dict(base, **{"sampleErrorReportLimit": 1}),
+         "errorIssues"),
+        ("individual error reports", "errorReports", dict(base), "errorReports"),
+    ]
+    print(f"Asking Play four questions about {package}, over the last {days} days.\n")
+    found = False
+    for label, resource, params, key in probes:
+        url = f"{API}/apps/{package}/{resource}:search?" + urllib.parse.urlencode(params)
+        rows = call(token, url).get(key, [])
+        print(f"  {'some' if rows else 'none':>4}  {label}")
+        found = found or bool(rows)
+
+    print()
+    if found:
+        print("There is error data here, so an empty crash listing means there were no crashes of\n"
+              "that type, not that the query is wrong.")
+    else:
+        print("Play returned nothing for any of them, including raw error reports, which are not\n"
+              "aggregated and not subject to the small-audience threshold. For an app on the\n"
+              "internal track with a handful of testers that is the expected answer: Play has no\n"
+              "error data to give. It does not distinguish a correct query from a broken one, so\n"
+              "treat the first real crash that lands here as the proof this works.")
+    return 0
+
+
 def main():
     args = sys.argv[1:]
 
@@ -198,6 +240,7 @@ def main():
         return default
 
     check = flag("--check")
+    diagnosing = flag("--diagnose")
     dry_run = flag("--dry-run")
     anrs = flag("--anrs")
     fail_on_new = flag("--fail-on-new")
@@ -208,7 +251,8 @@ def main():
     params = request_params("ANR" if anrs else "CRASH", days, limit)
 
     if check:
-        return check_against_discovery(params)
+        # What diagnose() sends to the reports endpoint, which takes no filter or ordering.
+        return check_against_discovery(params, dict(interval(days), pageSize=1))
     if dry_run:
         print(f"GET {API}/apps/{package}/errorIssues:search?"
               + urllib.parse.urlencode(params).replace("&", "\n    &"))
@@ -223,6 +267,9 @@ def main():
     creds = service_account.Credentials.from_service_account_info(key, scopes=[SCOPE])
     creds.refresh(google.auth.transport.requests.Request())
     token = creds.token
+
+    if diagnosing:
+        return diagnose(token, package, days)
 
     print(f"{'ANRs' if anrs else 'Crashes'} for {package}, last {days} days")
     url = f"{API}/apps/{package}/errorIssues:search?" + urllib.parse.urlencode(params)
