@@ -81,6 +81,12 @@ jobs:
           fi
           exit $fail
 
+      # tools/play-crashes.py can't be run end to end here: the service account key is a secret
+      # and PRs from forks don't get it. This checks it against the API's own published schema
+      # instead, which needs no credentials and catches a rename on either side.
+      - name: Check the Play crash reader against the API schema
+        run: python3 tools/play-crashes.py --check
+
       - name: Assert no build outputs are committed
         run: |
           set -euo pipefail

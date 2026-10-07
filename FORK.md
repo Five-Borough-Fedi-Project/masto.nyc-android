@@ -254,6 +254,26 @@ It found the followed hashtags crash that could not be reproduced by hand: six h
 direction, where a dozen deliberate scrolls had not been enough. Both scripts share
 `tools/lib/emulator.sh` for adb, taps and demo mode, so there is one copy of each.
 
+### Crashes from real phones
+
+The hashtags crash arrived as a sentence from the person who hit it, and the only way to act on it
+was to guess which contract it had violated. Play had the stack trace all along; nothing here
+could read it. `tools/play-crashes.py` does, through the Play Developer Reporting API, and prints
+the cause, the location, the affected versionCodes and a sample stack trace. The `Play crashes`
+workflow runs it on demand and weekly; it only prints, because the point is to be read rather than
+to block anything.
+
+The service account needs "View app information and download bulk reports" in Play Console, which
+is not implied by the publishing permission the release pipeline uses. A 403 says so in those
+words.
+
+The key is a secret, so that script cannot be run end to end on a laptop, which is a good way to
+ship a tool that has never worked. `--check` reads the API's unauthenticated discovery document
+and fails if the script sends a parameter the API doesn't accept or reads a field it doesn't
+return; CI runs it on every PR. Writing it caught three real mistakes before the first live call,
+the worst being a missing `sampleErrorReportLimit`, which defaults to 0 and would have returned
+every stack trace empty.
+
 ### Releasing to Play
 
 `PLAY_TRACK` and `PLAY_RELEASE_STATUS` are repository variables, so where a release lands is a

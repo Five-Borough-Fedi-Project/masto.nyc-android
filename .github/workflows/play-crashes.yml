@@ -1,0 +1,51 @@
+name: Play crashes
+
+# Prints the crashes and ANRs Play has collected, with their stack traces, so a crash reported by
+# a user can be looked at rather than guessed at. Read-only.
+#
+# The weekly run is there so a crash nobody reports still gets noticed. It only prints; nothing
+# fails on a finding, because the point is to be read, not to block anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: How many days back to look
+        default: "7"
+      kind:
+        description: Which to list
+        type: choice
+        default: crashes
+        options: [crashes, anrs]
+  schedule:
+    # Mondays, 14:00 UTC. Play aggregates with a delay, so there is no point running it at midnight.
+    - cron: "0 14 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  crashes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet google-auth
+      # Fails loudly on a schema change rather than quietly printing nothing.
+      - name: Check the request against the API schema
+        run: python3 tools/play-crashes.py --check
+      - name: Read the crashes Play has
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          DAYS: ${{ inputs.days || '7' }}
+          KIND: ${{ inputs.kind || 'crashes' }}
+        run: |
+          set -euo pipefail
+          args=(--days "$DAYS")
+          [ "$KIND" = anrs ] && args+=(--anrs)
+          python3 tools/play-crashes.py "${args[@]}" | tee crashes.txt
+          # The summary is what you see from the Actions list without opening the run.
+          {
+            echo '```'
+            cat crashes.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
