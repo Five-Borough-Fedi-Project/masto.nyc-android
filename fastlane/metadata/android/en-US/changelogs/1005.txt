@@ -1,1 +1,4 @@
-- Nothing new for you in this one. It is a release-pipeline test, with no app changes since 0.1.4.
+- The masto.nyc feed has its own tab now, called Neighbors, with a pigeon to match.
+- Home keeps the posts from people you follow.
+- Settings and log out moved to a long press on your profile tab, and the gear is gone from the top of the screen.
+- Your lists and the hashtags you follow are on the search screen.
