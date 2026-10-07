@@ -230,11 +230,15 @@ status bar regression, the worst one found while writing this, would not have be
 test here.
 
 That one needs an emulator, which is what `tools/visual-check.sh` is for: it drives a running,
-signed-in emulator and compares regions of the screen, mostly status bar strips, against goldens
-per API level. It is not in CI, because the screens worth checking are behind a login and a CI
-emulator has no account. Run it by hand when touching anything around the system bars.
-[tools/visual/README.md](tools/visual/README.md) has the details, including the run where it
-catches that exact regression.
+signed-in emulator and compares regions of the screen against goldens per API level. It is not in
+CI, because the screens worth checking are behind a login and a CI emulator has no account. Run it
+by hand when touching anything around the system bars. [tools/visual/README.md](tools/visual/README.md)
+has the details, including the run where it catches that exact regression.
+
+It covers eight screens now, each in light and dark: both timeline tabs' status bars, the fork's
+tab icons, the bar in landscape, the hashtags accordion, the profile tab menu, the QR dialog and
+action mode. Dark is there because a bar that is right in light and wrong in dark is an easy
+regression and nothing was looking for it.
 
 Pixels are not the only thing an emulator can tell you, though, and most of what this fork has
 got wrong was not a pixel. A tab wired to the wrong timeline looks completely normal; so does a

@@ -10,3 +10,6 @@
 local.properties
 *.jks
 /fastlane/report.xml
+
+# Python bytecode from the tools under tools/
+__pycache__/
