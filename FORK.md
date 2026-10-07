@@ -248,6 +248,24 @@ emulator has no account. Run it by hand when touching anything around the system
 [tools/visual/README.md](tools/visual/README.md) has the details, including the run where it
 catches that exact regression.
 
+Pixels are not the only thing an emulator can tell you, though, and most of what this fork has
+got wrong was not a pixel. A tab wired to the wrong timeline looks completely normal; so does a
+crash that only happens on a hard fling. So `tools/smoke-test.sh` drives the same emulator and
+asserts facts instead of comparing images:
+
+- which endpoint each timeline tab actually called, read out of the request log that
+  `MastodonAPIController` writes on debug builds. The Neighbors tab silently loading the home
+  timeline is invisible on screen and obvious here.
+- that both timeline toolbars land at the same height, which is how a tab that isn't being handed
+  the window insets shows up.
+- that the followed hashtags section survives being flung, with any `FATAL EXCEPTION` in logcat
+  failing the check that was running at the time.
+- that settings are still reachable from the profile tab's long press, now the only way in.
+
+It found the followed hashtags crash that could not be reproduced by hand: six hard flings in each
+direction, where a dozen deliberate scrolls had not been enough. Both scripts share
+`tools/lib/emulator.sh` for adb, taps and demo mode, so there is one copy of each.
+
 ### Releasing to Play
 
 `PLAY_TRACK` and `PLAY_RELEASE_STATUS` are repository variables, so where a release lands is a
