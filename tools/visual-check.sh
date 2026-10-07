@@ -2,6 +2,9 @@
 # Visual checks against a running emulator, for the things unit tests can't see: system bars,
 # dialog windows, and anything the platform draws around the app.
 #
+# The counterpart is tools/smoke-test.sh, which asserts facts rather than comparing pixels. Both
+# drive the emulator through tools/lib/emulator.sh.
+#
 #   tools/visual-check.sh                 # check against the goldens
 #   tools/visual-check.sh --record        # re-record them, then read the diff before committing
 #   tools/visual-check.sh --apk path.apk  # use a prebuilt APK instead of assembling debug
@@ -15,11 +18,10 @@
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
-sdk=${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}
-adb=${sdk:+$sdk/platform-tools/}adb
-api=''  # filled in once a device is there; goldens are per API level
-out=build/visual-check
-package=nyc.masto.android
+# shellcheck source=lib/emulator.sh
+source tools/lib/emulator.sh
+
+out=build/visual-check  # goldens are per API level, see below
 record=false
 apk=
 
@@ -31,8 +33,8 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
-"$adb" get-state >/dev/null 2>&1 || { echo "no device: start an emulator first" >&2; exit 1; }
-api=$("$adb" shell getprop ro.build.version.sdk | tr -d '\r')
+require_device
+api=$(device_api)
 goldens=tools/visual/goldens/api$api
 echo "> device is API $api; goldens in $goldens"
 mkdir -p "$out" "$goldens"
@@ -47,28 +49,7 @@ echo "> installing $apk"
 
 # A screenshot of a live phone changes every minute otherwise. Demo mode pins the clock and the
 # status bar icons, which is what makes comparing the status bar possible at all.
-"$adb" shell settings put global sysui_demo_allowed 1
-demo(){ "$adb" shell am broadcast -a com.android.systemui.demo -e command "$@" >/dev/null; }
-demo enter
-demo clock -e hhmm 1200
-demo battery -e level 100 -e plugged false
-demo network -e wifi show -e level 4
-demo network -e mobile show -e level 4
-demo notifications -e visible false
-for s in window_animation_scale transition_animation_scale animator_duration_scale; do
-	"$adb" shell settings put global $s 0
-done
-
-tap(){ # tap the centre of the node with this text or content-desc
-	"$adb" shell uiautomator dump /sdcard/ui.xml >/dev/null
-	local b
-	b=$("$adb" exec-out cat /sdcard/ui.xml | tr '>' '\n' | grep -E "(content-desc|text)=\"$1\"" | head -1 \
-		| grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | grep -oE '[0-9]+' | tr '\n' ' ')
-	[ -n "$b" ] || { echo "  ! can't find \"$1\" on screen" >&2; return 1; }
-	set -- $b
-	"$adb" shell input tap $(( ($1+$3)/2 )) $(( ($2+$4)/2 ))
-	sleep 2
-}
+demo_mode_on
 
 screens_checked=0
 failures=0
@@ -106,16 +87,10 @@ shot(){ # shot <name> <crop x,y,w,h or "full">
 	fi
 }
 
-restart(){
-	"$adb" shell am force-stop $package
-	"$adb" shell am start -n $package/org.joinmastodon.android.MainActivity >/dev/null
-	sleep 5
-	tap "Don’t allow" >/dev/null 2>&1 || true
-}
-
-restart
+app_restart
+tap "Don’t allow" >/dev/null 2>&1 || true
 # Never clears app data: the session on the emulator is the user's, and signing in again is manual.
-if "$adb" shell uiautomator dump /sdcard/ui.xml >/dev/null && "$adb" exec-out cat /sdcard/ui.xml | grep -q 'text="Log in"'; then
+if signed_out; then
 	echo "> signed out: checking the splash screen only"
 	# All fork artwork, with the bars transparent over it.
 	shot splash full
@@ -135,7 +110,7 @@ else
 
 	# Action mode, where the status bar used to be tinted by the window. Reached through a filter
 	# draft that is never saved, so nothing is written to the account.
-	restart
+	app_restart
 	if tap "Settings" && tap "@playstoretesting@masto.nyc" && tap "Filters" && tap "Add filter" \
 			&& tap "0 muted words or phrases"; then
 		for word in alpha beta; do
@@ -150,7 +125,7 @@ else
 	fi
 fi
 
-demo exit
+demo_mode_off
 echo
 echo "$screens_checked screens, $failures failing. Images in $out."
 [ "$failures" -eq 0 ]
