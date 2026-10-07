@@ -87,6 +87,121 @@ shot(){ # shot <name> <crop x,y,w,h or "full">
 	fi
 }
 
+# Crop regions are derived from the display rather than hardcoded, so landscape and a different
+# AVD don't each need their own numbers.
+read -r SW SH <<<"$(screen_size)"
+bar_strip="0,0,$SW,120"
+top_strip="0,0,$SW,240"
+
+# Whatever the device was set to before, restored at the end: these are real device settings.
+night_was=$(night_mode_now)
+restore(){
+	night_mode "$night_was" >/dev/null 2>&1 || true
+	rotate_restore >/dev/null 2>&1 || true
+	demo_mode_off >/dev/null 2>&1 || true
+}
+trap restore EXIT
+
+# Every screen this fork changed, walked once per theme. The suffix keeps the two sets of goldens
+# apart; the theme is in the name because a bar that is right in light and wrong in dark is a real
+# and easy regression, and nothing was looking for it.
+check_screens(){
+	local suffix=$1
+
+	app_restart
+	tap "Don’t allow" >/dev/null 2>&1 || true
+
+	# The tab the app opens on. Its toolbar paints the strip behind the status bar itself now, and
+	# Neighbors is a fork tab that nothing else checks.
+	shot "neighbors-status-bar$suffix" "$bar_strip"
+
+	# The fork's own tab icons, the pigeon and the buildings, with the selected-tab treatment.
+	# Only the left two tabs: the notifications badge further along is live and would fail this
+	# whenever a notification happened to be waiting.
+	shot "fork-tab-icons$suffix" "0,$((SH-220)),440,220"
+
+	if tap "Home"; then
+		shot "home-status-bar$suffix" "$bar_strip"
+	else
+		echo "  ! couldn't find the Home tab; skipping home-status-bar$suffix"
+	fi
+
+	# The followed hashtags section, open. A merged adapter in front of upstream's trending list,
+	# and the accordion header is the fork's own.
+	if tap "Search" && ui_wait "Hashtags" 10 && tap "Hashtags" \
+			&& ui_wait "Hashtags you follow" 10 && tap "Hashtags you follow"; then
+		# Down to the accordion header and no further. Below it are the hashtags the signed-in
+		# account follows and then upstream's trending list, with a live "N people are talking"
+		# on every row; pinning those would fail on a golden recorded yesterday. What the rows
+		# say is the smoke test's job. The chevron carries the one thing worth pinning here,
+		# which is that the section is open.
+		shot "followed-hashtags$suffix" "0,0,$SW,640"
+	else
+		echo "  ! couldn't reach the hashtags accordion; skipping followed-hashtags$suffix"
+	fi
+
+	# The sheet behind a long press on the profile tab, which is the only way into settings since
+	# the toolbar gear was removed.
+	app_restart
+	if long_press "My profile" && ui_wait "Settings" 5; then
+		# The sheet only. A taller crop catches the timeline behind it, and a new post arriving
+		# during the run then fails the check for no reason; that happened on the first pass.
+		shot "profile-tab-menu$suffix" "0,$((SH-520)),$SW,520"
+		"$adb" shell input keyevent KEYCODE_BACK
+		sleep 1
+	else
+		echo "  ! couldn't open the profile tab menu; skipping profile-tab-menu$suffix"
+	fi
+
+	# The QR dialog gets its transparent bars from a theme rather than from code. Its particle
+	# animation never settles, so only the status bar strip is compared.
+	app_restart
+	if tap "My profile" && tap "More options" && tap "View QR code"; then
+		shot "qr-dialog-status-bar$suffix" "$bar_strip"
+		"$adb" shell input keyevent KEYCODE_BACK
+		sleep 2
+	else
+		echo "  ! couldn't reach the QR dialog; skipping qr-dialog$suffix"
+	fi
+
+	# Landscape, which is what the orientation work was about: the app used to lock itself to
+	# portrait, and Android 16 ignores that lock on large screens. The bottom bar is the honest
+	# thing to compare here -- the QR dialog is the screen that drove the orientation work, but
+	# its particle animation never settles and a strip of it is not reproducible between runs.
+	# QrCodeLayoutTest measures that screen in landscape instead, where nothing is animating.
+	app_restart
+	rotate 1
+	# wm size keeps reporting the physical size after a rotation, so landscape dimensions are the
+	# two values swapped rather than something to read back off the device.
+	lw=$(( SW > SH ? SW : SH ))
+	lh=$(( SW > SH ? SH : SW ))
+	shot "tab-bar-landscape$suffix" "0,$((lh-180)),$lw,180"
+	rotate 0
+	sleep 2
+
+	# Action mode, where the status bar used to be tinted by the window. Reached through a filter
+	# draft that is never saved, so nothing is written to the account.
+	#
+	# Settings is behind the profile tab's long press now, not the home toolbar. This walk was
+	# still tapping a toolbar "Settings" that has not existed since that change, so it had been
+	# skipping silently -- which is why a skip is loud here.
+	app_restart
+	# Filters live under the account, so the account row has to be tapped on the way. Matched as a
+	# pattern rather than by name, so this doesn't depend on which account is signed in.
+	if long_press "My profile" && tap "Settings" && tap "@[^@\"]+@[^\"]+" && tap "Filters" \
+			&& tap "Add filter" && tap "0 muted words or phrases"; then
+		for word in alpha beta; do
+			tap "Add word" && tap "Word or phrase" && "$adb" shell input text "$word" && tap "Add"
+		done
+		if tap "More options" && tap "Select"; then
+			shot "selection-mode-status-bar$suffix" "$top_strip"
+		fi
+		for _ in 1 2 3 4 5 6; do "$adb" shell input keyevent KEYCODE_BACK; sleep 1; done
+	else
+		echo "  ! couldn't reach the filter words screen; skipping action mode$suffix"
+	fi
+}
+
 app_restart
 tap "Don’t allow" >/dev/null 2>&1 || true
 # Never clears app data: the session on the emulator is the user's, and signing in again is manual.
@@ -96,36 +211,14 @@ if signed_out; then
 	shot splash full
 	echo "  sign in on the emulator to check the rest"
 else
-	echo "> signed in: checking the screens this fork changed"
-	# Status bar over a normal screen: the fragment paints this strip itself now.
-	shot home-status-bar 0,0,1080,120
-	tap "My profile" || true
-	tap "More options" || true
-	tap "View QR code" || true
-	# The QR dialog gets its transparent bars from a theme rather than from code. Its particle
-	# animation never settles, so only the status bar strip is compared.
-	shot qr-dialog-status-bar 0,0,1080,120
-	"$adb" shell input keyevent KEYCODE_BACK
-	sleep 2
-
-	# Action mode, where the status bar used to be tinted by the window. Reached through a filter
-	# draft that is never saved, so nothing is written to the account.
-	app_restart
-	if tap "Settings" && tap "@playstoretesting@masto.nyc" && tap "Filters" && tap "Add filter" \
-			&& tap "0 muted words or phrases"; then
-		for word in alpha beta; do
-			tap "Add word" && tap "Word or phrase" && "$adb" shell input text "$word" && tap "Add"
-		done
-		if tap "More options" && tap "Select"; then
-			shot selection-mode-status-bar 0,0,1080,240
-		fi
-		for _ in 1 2 3 4 5; do "$adb" shell input keyevent KEYCODE_BACK; sleep 1; done
-	else
-		echo "  ! couldn't reach the filter words screen; skipping action mode"
-	fi
+	echo "> light theme"
+	night_mode no
+	check_screens ""
+	echo "> dark theme"
+	night_mode yes
+	check_screens "-dark"
 fi
 
-demo_mode_off
 echo
 echo "$screens_checked screens, $failures failing. Images in $out."
 [ "$failures" -eq 0 ]

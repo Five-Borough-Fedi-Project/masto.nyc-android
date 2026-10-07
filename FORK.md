@@ -242,11 +242,15 @@ status bar regression, the worst one found while writing this, would not have be
 test here.
 
 That one needs an emulator, which is what `tools/visual-check.sh` is for: it drives a running,
-signed-in emulator and compares regions of the screen, mostly status bar strips, against goldens
-per API level. It is not in CI, because the screens worth checking are behind a login and a CI
-emulator has no account. Run it by hand when touching anything around the system bars.
-[tools/visual/README.md](tools/visual/README.md) has the details, including the run where it
-catches that exact regression.
+signed-in emulator and compares regions of the screen against goldens per API level. It is not in
+CI, because the screens worth checking are behind a login and a CI emulator has no account. Run it
+by hand when touching anything around the system bars. [tools/visual/README.md](tools/visual/README.md)
+has the details, including the run where it catches that exact regression.
+
+It covers eight screens now, each in light and dark: both timeline tabs' status bars, the fork's
+tab icons, the bar in landscape, the hashtags accordion, the profile tab menu, the QR dialog and
+action mode. Dark is there because a bar that is right in light and wrong in dark is an easy
+regression and nothing was looking for it.
 
 Pixels are not the only thing an emulator can tell you, though, and most of what this fork has
 got wrong was not a pixel. A tab wired to the wrong timeline looks completely normal; so does a
@@ -265,6 +269,26 @@ asserts facts instead of comparing images:
 It found the followed hashtags crash that could not be reproduced by hand: six hard flings in each
 direction, where a dozen deliberate scrolls had not been enough. Both scripts share
 `tools/lib/emulator.sh` for adb, taps and demo mode, so there is one copy of each.
+
+### Crashes from real phones
+
+The hashtags crash arrived as a sentence from the person who hit it, and the only way to act on it
+was to guess which contract it had violated. Play had the stack trace all along; nothing here
+could read it. `tools/play-crashes.py` does, through the Play Developer Reporting API, and prints
+the cause, the location, the affected versionCodes and a sample stack trace. The `Play crashes`
+workflow runs it on demand and weekly; it only prints, because the point is to be read rather than
+to block anything.
+
+The service account needs "View app information and download bulk reports" in Play Console, which
+is not implied by the publishing permission the release pipeline uses. A 403 says so in those
+words.
+
+The key is a secret, so that script cannot be run end to end on a laptop, which is a good way to
+ship a tool that has never worked. `--check` reads the API's unauthenticated discovery document
+and fails if the script sends a parameter the API doesn't accept or reads a field it doesn't
+return; CI runs it on every PR. Writing it caught three real mistakes before the first live call,
+the worst being a missing `sampleErrorReportLimit`, which defaults to 0 and would have returned
+every stack trace empty.
 
 ### Releasing to Play
 
