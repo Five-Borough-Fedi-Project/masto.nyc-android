@@ -21,7 +21,9 @@ ui_refresh(){
 	"$adb" exec-out cat /sdcard/ui.xml > "$_ui_dump"
 }
 
-# bounds of the first node whose text or content-desc is exactly $1, as "x1 y1 x2 y2"
+# bounds of the first node whose text or content-desc matches $1, as "x1 y1 x2 y2". $1 goes to
+# grep -E, so an exact string works and so does a pattern, which is how a screen naming the
+# signed-in account is reached without hardcoding which account that is.
 ui_bounds(){
 	tr '>' '\n' < "$_ui_dump" \
 		| grep -E "(content-desc|text)=\"$1\"" | head -1 \
@@ -87,3 +89,22 @@ demo_mode_off(){
 }
 
 signed_out(){ ui_refresh && ui_has "Log in"; }
+
+# Light or dark. Both scripts restore what they found, since this is a real device setting.
+night_mode(){ "$adb" shell cmd uimode night "$1" >/dev/null; sleep 3; }
+night_mode_now(){ "$adb" shell cmd uimode night | tr -d '\r' | sed 's/.*: *//'; }
+
+# Rotation needs auto-rotate off, or the app springs back.
+rotate(){
+	"$adb" shell settings put system accelerometer_rotation 0
+	"$adb" shell settings put system user_rotation "$1"
+	sleep 3
+}
+rotate_restore(){
+	"$adb" shell settings put system user_rotation 0
+	"$adb" shell settings put system accelerometer_rotation 1
+}
+
+# "<width> <height>" of the display, which the crop regions are derived from so landscape and a
+# different device don't need separate hardcoded numbers.
+screen_size(){ "$adb" shell wm size | tr -d '\r' | sed 's/.*: *//' | tr 'x' ' '; }
