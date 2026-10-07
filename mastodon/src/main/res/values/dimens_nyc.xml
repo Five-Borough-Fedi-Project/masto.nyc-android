@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- masto.nyc fork: dimensions belonging to this fork, in their own file so upstream's stay
+     untouched and merge cleanly. -->
+<resources>
+	<!-- How far the welcome screen's parallax layers are drawn past every edge of the screen.
+	     Negative because the layout applies it as a margin, and it has to be bigger than the
+	     furthest any layer travels, which SplashArtOverhangTest checks. Use it only through the
+	     per-side layout_margin attributes: android:layout_margin drops a negative value. -->
+	<dimen name="splash_art_overhang">-32dp</dimen>
+</resources>

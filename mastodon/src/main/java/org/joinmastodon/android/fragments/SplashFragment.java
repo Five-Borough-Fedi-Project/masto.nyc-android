@@ -17,6 +17,7 @@ import org.joinmastodon.android.api.MastodonErrorResponse;
 import org.joinmastodon.android.api.requests.accounts.CheckInviteLink;
 import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.fork.ForkConfig;
+import org.joinmastodon.android.fork.SplashArt;
 import org.joinmastodon.android.fragments.onboarding.InstanceRulesFragment;
 import org.joinmastodon.android.model.Instance;
 import org.joinmastodon.android.ui.InterpolatingMotionEffect;
@@ -44,7 +45,6 @@ public class SplashFragment extends AppKitFragment{
 	private View artContainer;
 	private InterpolatingMotionEffect motionEffect;
 	// masto.nyc fork: four full-bleed layers instead of upstream's five positioned pieces.
-	private View artSky, artSkyline, artRiver, artForeground;
 	private ProgressBarButton defaultServerButton;
 	private final String chosenDefaultServer=DEFAULT_SERVER;
 	private boolean checkedInviteLink;
@@ -68,18 +68,15 @@ public class SplashFragment extends AppKitFragment{
 		defaultServerButton.setText(getString(R.string.join_default_server, chosenDefaultServer));
 		defaultServerButton.setOnClickListener(this::onJoinDefaultServerClick);
 
-		artSky=contentView.findViewById(R.id.art_sky);
-		artSkyline=contentView.findViewById(R.id.art_skyline);
-		artRiver=contentView.findViewById(R.id.art_river);
-		artForeground=contentView.findViewById(R.id.art_foreground);
-
 		artContainer=contentView.findViewById(R.id.art_container);
-		// Travel grows with nearness, which is what reads as depth. The 24dp overscan in the
-		// layout is the budget: no layer may move further than that, or its edge comes into view.
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artSky, V.dp(-4), V.dp(4), V.dp(-4), V.dp(4)));
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artSkyline, V.dp(-8), V.dp(8), V.dp(-6), V.dp(6)));
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artRiver, V.dp(-14), V.dp(14), V.dp(-10), V.dp(10)));
-		motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(artForeground, V.dp(-22), V.dp(22), V.dp(-16), V.dp(16)));
+		// masto.nyc fork: how far each layer travels lives in SplashArt, next to the overhang it
+		// has to stay inside, so SplashArtOverhangTest can hold the two against each other.
+		for(SplashArt.Layer layer : SplashArt.LAYERS){
+			motionEffect.addViewEffect(new InterpolatingMotionEffect.ViewEffect(
+					contentView.findViewById(layer.viewId()),
+					V.dp(-layer.travelXDp()), V.dp(layer.travelXDp()),
+					V.dp(-layer.travelYDp()), V.dp(layer.travelYDp())));
+		}
 		artContainer.setOnTouchListener(motionEffect);
 		if(currentInviteLink!=null)
 			defaultServerButton.setText(getString(R.string.join_server_x_with_invite, currentInviteLink.getHost()));
