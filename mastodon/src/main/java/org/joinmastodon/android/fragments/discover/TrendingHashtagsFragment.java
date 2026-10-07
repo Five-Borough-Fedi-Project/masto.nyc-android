@@ -8,6 +8,7 @@ import android.widget.TextView;
 import org.joinmastodon.android.R;
 import org.joinmastodon.android.api.requests.trends.GetTrendingHashtags;
 import org.joinmastodon.android.fragments.ScrollableToTop;
+import org.joinmastodon.android.fork.FollowedHashtagsAdapter;
 import org.joinmastodon.android.model.Hashtag;
 import org.joinmastodon.android.ui.DividerItemDecoration;
 import org.joinmastodon.android.ui.utils.DiscoverInfoBannerHelper;
@@ -19,6 +20,7 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import me.grishka.appkit.api.SimpleCallback;
+import me.grishka.appkit.utils.MergeRecyclerAdapter;
 import me.grishka.appkit.fragments.BaseRecyclerFragment;
 import me.grishka.appkit.utils.BindableViewHolder;
 import me.grishka.appkit.views.UsableRecyclerView;
@@ -50,7 +52,12 @@ public class TrendingHashtagsFragment extends BaseRecyclerFragment<Hashtag> impl
 
 	@Override
 	protected RecyclerView.Adapter getAdapter(){
-		return new HashtagsAdapter();
+		// masto.nyc fork: the hashtags you follow were in the home dropdown, and sit above the
+		// trending ones now, in a section that opens and closes.
+		MergeRecyclerAdapter adapter=new MergeRecyclerAdapter();
+		adapter.addAdapter(new FollowedHashtagsAdapter(getActivity(), accountID));
+		adapter.addAdapter(new HashtagsAdapter());
+		return adapter;
 	}
 
 	@Override

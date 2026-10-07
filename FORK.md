@@ -53,6 +53,7 @@ Conflicts should be confined to the files below.
 | `.../fragments/HomeFragment.java`, `.../settings/SettingsMainFragment.java`, `.../onboarding/AccountActivationFragment.java` | one account per install, see [below](#one-account-per-install) |
 | `.../fragments/HomeTimelineFragment.java` | the toolbar gear only appears when an update is ready, and the dropdown is gone, see [below](#neighbors-is-its-own-tab) |
 | `res/layout/tab_bar.xml`, `.../fragments/settings/SettingsBehaviorFragment.java` | the Neighbors tab and which tab opens, see [below](#neighbors-is-its-own-tab) |
+| `.../discover/DiscoverFragment.java`, `.../discover/TrendingHashtagsFragment.java`, `res/values/ids.xml` | lists and followed hashtags, see [below](#lists-and-followed-hashtags-live-on-the-search-screen) |
 | `.../fragments/SplashFragment.java` | server is fixed; log in goes straight to OAuth; no catalog request |
 | `.../fragments/onboarding/GoogleMadeMeAddThisFragment.java` | privacy policy item points at ours |
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
@@ -122,6 +123,20 @@ for d in $(unzip -l app.apk | grep -oE "classes[0-9]*\.dex"); do
   unzip -p app.apk $d | strings | grep -c MastodonAndroid
 done
 ```
+
+### Lists and followed hashtags live on the search screen
+
+Both were in the home toolbar's dropdown that [the Neighbors tab](#neighbors-is-its-own-tab)
+removed, so they moved rather than disappeared.
+
+Lists are a fifth tab on the search screen, hosting upstream's own `ManageListsFragment` with
+`__is_tab`, which drops its toolbar the way the other tab fragments do. `DiscoverFragment` needed
+the tab count, the id, the page mapping and the offscreen page limit; nothing else.
+
+Followed hashtags open and close at the top of the Hashtags tab, as `FollowedHashtagsAdapter` in
+`fork/`, merged in front of upstream's adapter. It is collapsed by default, since that tab is for
+finding new hashtags, and it refetches every time it is opened: caching the first response left it
+stale for the rest of the session after following something.
 
 ### Neighbors is its own tab
 
