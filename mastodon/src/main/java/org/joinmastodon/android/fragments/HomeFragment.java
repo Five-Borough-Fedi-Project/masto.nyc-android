@@ -191,14 +191,11 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 		currentTab=savedInstanceState.getInt("selectedTab");
 		tabBar.selectTab(currentTab);
 		Fragment current=fragmentForTab(currentTab);
-		getChildFragmentManager().beginTransaction()
-				.hide(homeTimelineFragment)
-				.hide(neighborsTimelineFragment)
-				.hide(searchFragment)
-				.hide(notificationsFragment)
-				.hide(profileFragment)
-				.show(current)
-				.commit();
+		// masto.nyc fork: hide them all through the one list, see tabFragments()
+		FragmentTransaction transaction=getChildFragmentManager().beginTransaction();
+		for(AppKitFragment tab : tabFragments())
+			transaction.hide(tab);
+		transaction.show(current).commit();
 		maybeTriggerLoading(current);
 	}
 
@@ -228,13 +225,19 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 			super.onApplyWindowInsets(insets.replaceSystemWindowInsets(insets.getSystemWindowInsetLeft(), 0, insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom()));
 		}
 		WindowInsets topOnlyInsets=insets.replaceSystemWindowInsets(0, insets.getSystemWindowInsetTop(), 0, 0);
-		homeTimelineFragment.onApplyWindowInsets(topOnlyInsets);
-		// masto.nyc fork: the Neighbors timeline needs the top inset too, or its toolbar sits
-		// under the status bar.
-		neighborsTimelineFragment.onApplyWindowInsets(topOnlyInsets);
-		searchFragment.onApplyWindowInsets(topOnlyInsets);
-		notificationsFragment.onApplyWindowInsets(topOnlyInsets);
-		profileFragment.onApplyWindowInsets(topOnlyInsets);
+		// masto.nyc fork: upstream named each fragment here. Adding the Neighbors tab meant adding
+		// it to several parallel lists, and this one got missed, so its toolbar sat under the
+		// status bar. One list now, and HomeFragmentWiringTest fails if a tab is missing from it.
+		for(AppKitFragment tab : tabFragments())
+			tab.onApplyWindowInsets(topOnlyInsets);
+	}
+
+	/**
+	 * masto.nyc fork: every fragment behind a tab in the bottom bar. Anything that has to touch
+	 * all of them reads this rather than naming them again.
+	 */
+	private List<AppKitFragment> tabFragments(){
+		return List.of(homeTimelineFragment, neighborsTimelineFragment, searchFragment, notificationsFragment, profileFragment);
 	}
 
 	private Fragment fragmentForTab(@IdRes int tab){
