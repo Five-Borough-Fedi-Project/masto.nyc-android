@@ -11,6 +11,8 @@
 	<item name="discover_hashtags" type="id"/>
 	<item name="discover_news" type="id"/>
 	<item name="discover_users" type="id"/>
+	<!-- masto.nyc fork: the lists tab on the search screen -->
+	<item name="discover_lists" type="id"/>
 	<item name="discover_local_timeline" type="id"/>
 
 	<item name="notifications_all" type="id"/>

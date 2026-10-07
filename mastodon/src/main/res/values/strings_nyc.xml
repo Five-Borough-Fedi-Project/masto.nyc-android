@@ -4,4 +4,6 @@
 <resources>
 	<string name="tab_neighbors">Neighbors</string>
 	<string name="settings_opening_tab">Opening tab</string>
+	<string name="your_followed_hashtags">Hashtags you follow</string>
+	<string name="no_followed_hashtags">You don\'t follow any hashtags yet</string>
 </resources>

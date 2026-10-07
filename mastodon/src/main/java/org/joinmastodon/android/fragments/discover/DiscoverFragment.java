@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import org.joinmastodon.android.MainActivity;
 import org.joinmastodon.android.R;
+import org.joinmastodon.android.fragments.ManageListsFragment;
 import org.joinmastodon.android.fragments.ScrollableToTop;
 import org.joinmastodon.android.googleservices.GmsClient;
 import org.joinmastodon.android.googleservices.barcodescanner.Barcode;
@@ -57,6 +58,7 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 	private TrendingHashtagsFragment hashtagsFragment;
 	private DiscoverNewsFragment newsFragment;
 	private DiscoverAccountsFragment accountsFragment;
+	private ManageListsFragment listsFragment;
 	private SearchFragment searchFragment;
 
 	private String accountID;
@@ -84,7 +86,8 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 		searchTabLayout=view.findViewById(R.id.search_tabbar);
 		pager=view.findViewById(R.id.pager);
 
-		tabViews=new FrameLayout[4];
+		// masto.nyc fork: lists used to live in the home dropdown, and are a tab here now
+		tabViews=new FrameLayout[5];
 		for(int i=0;i<tabViews.length;i++){
 			FrameLayout tabView=new FrameLayout(getActivity());
 			tabView.setId(switch(i){
@@ -92,6 +95,7 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 				case 1 -> R.id.discover_hashtags;
 				case 2 -> R.id.discover_news;
 				case 3 -> R.id.discover_users;
+				case 4 -> R.id.discover_lists;
 				default -> throw new IllegalStateException("Unexpected value: "+i);
 			});
 			tabView.setVisibility(View.GONE);
@@ -102,7 +106,7 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 		tabLayout.setTabTextColors(UiUtils.getThemeColor(getActivity(), R.attr.colorM3OnSurfaceVariant), UiUtils.getThemeColor(getActivity(), R.attr.colorM3Primary));
 		tabLayout.setTabTextSize(V.dp(14));
 
-		pager.setOffscreenPageLimit(4);
+		pager.setOffscreenPageLimit(5);
 		pager.setAdapter(new DiscoverPagerAdapter());
 		pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback(){
 			@Override
@@ -134,11 +138,17 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 			accountsFragment=new DiscoverAccountsFragment();
 			accountsFragment.setArguments(args);
 
+			// masto.nyc fork: upstream's lists screen, embedded as a tab. "__is_tab" drops its
+			// toolbar, as the other tab fragments do.
+			listsFragment=new ManageListsFragment();
+			listsFragment.setArguments(args);
+
 			getChildFragmentManager().beginTransaction()
 					.add(R.id.discover_posts, postsFragment)
 					.add(R.id.discover_hashtags, hashtagsFragment)
 					.add(R.id.discover_news, newsFragment)
 					.add(R.id.discover_users, accountsFragment)
+					.add(R.id.discover_lists, listsFragment)
 					.commit();
 		}
 
@@ -150,6 +160,7 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 					case 1 -> R.string.hashtags;
 					case 2 -> R.string.news;
 					case 3 -> R.string.for_you;
+					case 4 -> R.string.lists;
 					default -> throw new IllegalStateException("Unexpected value: "+position);
 				});
 			}
@@ -292,6 +303,7 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 			case 1 -> hashtagsFragment;
 			case 2 -> newsFragment;
 			case 3 -> accountsFragment;
+			case 4 -> listsFragment;
 			default -> throw new IllegalStateException("Unexpected value: "+page);
 		};
 	}
