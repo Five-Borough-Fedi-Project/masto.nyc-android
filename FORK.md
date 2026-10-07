@@ -141,9 +141,10 @@ keeps that out of upstream's `GlobalUserPreferences`, in its own SharedPreferenc
 neither file conflicts.
 
 The home tab's icon is Material's `location_city`, which has no distinct filled variant, so the
-selected state reads through the tab colours. The Neighbors icon is **a placeholder** until 5BFP
-pigeon artwork lands: replace `ic_pigeon_24px.xml` and `ic_pigeon_fill1_24px.xml`, keeping the
-names.
+selected state reads through the tab colours. The Neighbors icon is derived from Five Borough Fedi
+Project's pigeon drawing by `tools/artwork/pigeonize.py`, which rebuilds it at the weight Material
+tab icons use; a straight trace of the drawing is too faint to read at 24dp.
+[tools/artwork/README.md](tools/artwork/README.md) covers regenerating it.
 
 ### Settings behind the profile tab
 
