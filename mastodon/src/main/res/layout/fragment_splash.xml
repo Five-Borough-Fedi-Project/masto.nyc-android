@@ -12,9 +12,17 @@
 	<!-- masto.nyc fork: upstream's art is five pieces positioned by hand inside a 360x640dp box,
 	     scaled to the screen width, with flat colour fills above and below it. Ours is four
 	     full-bleed layers drawn at 1440x3040, so they are stacked edge to edge and cropped to
-	     whatever the screen actually is. Each one is 24dp larger than the screen on every side so
-	     the parallax never drags an edge into view. Back to front: sky, skyline, river, riverbank.
-	     A fifth layer is still to come from the artist; nothing here assumes how many there are. -->
+	     whatever the screen actually is. Each one is drawn past every edge of the screen by
+	     @dimen/splash_art_overhang so the parallax never drags an edge into view. Back to front:
+	     sky, skyline, river, riverbank. A fifth layer is still to come from the artist; nothing
+	     here assumes how many there are.
+
+	     The overhang is applied per side, not with android:layout_margin. That attribute silently
+	     drops a negative value, because MarginLayoutParams reads it with -1 meaning "unset" and
+	     only applies it when it is at least 0. So the shorthand left every layer at exactly screen
+	     size with no overhang at all, and the smallest movement showed an edge. The per-side
+	     attributes have no such check. SplashArtOverhangTest fails if the overhang ever stops
+	     covering the travel. -->
 	<FrameLayout
 		android:id="@+id/art_container"
 		android:layout_width="match_parent"
@@ -24,7 +32,10 @@
 			android:id="@+id/art_sky"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout_margin="-24dp"
+			android:layout_marginLeft="@dimen/splash_art_overhang"
+			android:layout_marginTop="@dimen/splash_art_overhang"
+			android:layout_marginRight="@dimen/splash_art_overhang"
+			android:layout_marginBottom="@dimen/splash_art_overhang"
 			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
 			android:src="@drawable/splash_art_sky"/>
@@ -33,7 +44,10 @@
 			android:id="@+id/art_skyline"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout_margin="-24dp"
+			android:layout_marginLeft="@dimen/splash_art_overhang"
+			android:layout_marginTop="@dimen/splash_art_overhang"
+			android:layout_marginRight="@dimen/splash_art_overhang"
+			android:layout_marginBottom="@dimen/splash_art_overhang"
 			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
 			android:src="@drawable/splash_art_skyline"/>
@@ -42,7 +56,10 @@
 			android:id="@+id/art_river"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout_margin="-24dp"
+			android:layout_marginLeft="@dimen/splash_art_overhang"
+			android:layout_marginTop="@dimen/splash_art_overhang"
+			android:layout_marginRight="@dimen/splash_art_overhang"
+			android:layout_marginBottom="@dimen/splash_art_overhang"
 			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
 			android:src="@drawable/splash_art_river"/>
@@ -51,7 +68,10 @@
 			android:id="@+id/art_foreground"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout_margin="-24dp"
+			android:layout_marginLeft="@dimen/splash_art_overhang"
+			android:layout_marginTop="@dimen/splash_art_overhang"
+			android:layout_marginRight="@dimen/splash_art_overhang"
+			android:layout_marginBottom="@dimen/splash_art_overhang"
 			android:scaleType="centerCrop"
 			android:importantForAccessibility="no"
 			android:src="@drawable/splash_art_foreground"/>

@@ -234,6 +234,15 @@ build has to match.
   committing it. `ForkScreenshot` writes actual, golden and diff images to
   `build/reports/fork-screenshots` on a failure.
 
+- `SplashArtOverhangTest` checks that each of the welcome screen's parallax layers is drawn far
+  enough past the edge of the screen to cover the distance it is allowed to travel. The layers
+  asked for that overhang with `android:layout_margin="-24dp"`, which silently does nothing:
+  `MarginLayoutParams` reads that attribute with -1 as its "unset" sentinel and applies it only
+  when it is at least 0, so a negative value falls through to the per-side attributes, which
+  weren't set. Every layer was laid out at exactly screen size and the smallest drag showed an
+  edge. The overhang is `@dimen/splash_art_overhang` now, applied per side, and how far each
+  layer may travel lives in `SplashArt` beside it so the test can hold the two against each other.
+
 Each was checked by reverting the fix it covers and watching it fail.
 
 What none of them reach is the window: Robolectric draws view trees, so the system bars, real
