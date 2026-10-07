@@ -15,6 +15,41 @@
 		android:layout_height="80dp"
 		tools:ignore="RtlHardcoded,RtlSymmetry">
 
+		<!-- masto.nyc fork: the local timeline, this fork's reason to exist, leads the bar -->
+		<FrameLayout
+			android:id="@+id/tab_neighbors"
+			android:layout_width="0dp"
+			android:layout_height="match_parent"
+			android:layout_weight="1"
+			android:background="@drawable/bg_tabbar_tab"
+			android:paddingHorizontal="4dp"
+			android:contentDescription="@string/tab_neighbors">
+
+			<ImageView
+				android:layout_width="32dp"
+				android:layout_height="32dp"
+				android:layout_gravity="top|center_horizontal"
+				android:layout_marginTop="12dp"
+				android:scaleType="center"
+				android:importantForAccessibility="no"
+				android:tint="@color/tab_bar_icon"
+				android:src="@drawable/ic_tab_neighbors"/>
+			
+			<TextView
+				android:id="@+id/label"
+				android:layout_width="match_parent"
+				android:layout_height="16dp"
+				android:layout_marginBottom="16dp"
+				android:layout_gravity="bottom"
+				android:gravity="center"
+				android:textSize="12dp"
+				android:textColor="?colorM3OnSurfaceVariant"
+				android:singleLine="true"
+				android:ellipsize="end"
+				android:text="@string/tab_neighbors"/>
+
+		</FrameLayout>
+
 		<FrameLayout
 			android:id="@+id/tab_home"
 			android:layout_width="0dp"
@@ -32,7 +67,7 @@
 				android:scaleType="center"
 				android:importantForAccessibility="no"
 				android:tint="@color/tab_bar_icon"
-				android:src="@drawable/ic_tab_home"/>
+				android:src="@drawable/ic_tab_home_city"/>
 			
 			<TextView
 				android:id="@+id/label"

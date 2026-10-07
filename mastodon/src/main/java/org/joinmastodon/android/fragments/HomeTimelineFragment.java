@@ -108,6 +108,9 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 	private HomeTimelineMenuController dropdownMainMenuController;
 	private List<FollowList> lists=List.of();
 	private ListMode listMode=ListMode.FOLLOWING;
+	// masto.nyc fork: the Neighbors tab hosts a second instance of this fragment, pinned to the
+	// local timeline, set from the "localOnly" argument in onCreate.
+	private boolean localOnly;
 	private FollowList currentList;
 	private MergeRecyclerAdapter mergeAdapter;
 	private DiscoverInfoBannerHelper localTimelineBannerHelper;
@@ -164,6 +167,11 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 	@Override
 	public void onAttach(Activity activity){
 		super.onAttach(activity);
+		// masto.nyc fork: before loadData() below, which runs in onAttach, so setting this in
+		// onCreate would be too late and the Neighbors tab would load the home timeline.
+		localOnly=getArguments().getBoolean("localOnly", false);
+		if(localOnly)
+			listMode=ListMode.LOCAL;
 		dropdownController=new ToolbarDropdownMenuController(this);
 		dropdownMainMenuController=new HomeTimelineMenuController(dropdownController, new HomeTimelineMenuController.Callback(){
 			@Override
@@ -672,42 +680,11 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 		super.onRefresh();
 	}
 
+	// masto.nyc fork: upstream puts Home, Local, Lists and Followed hashtags behind a dropdown
+	// here. The two timelines are separate tabs in the bottom bar now, and lists and followed
+	// hashtags move to the search screen, so the toolbar just names the timeline.
 	private void updateToolbarLogo(){
-		listsDropdown=new LinearLayout(getActivity());
-		listsDropdown.setOnClickListener(this::onListsDropdownClick);
-		listsDropdown.setBackgroundResource(R.drawable.bg_button_m3_text);
-		listsDropdown.setAccessibilityDelegate(new View.AccessibilityDelegate(){
-			@Override
-			public void onInitializeAccessibilityNodeInfo(@NonNull View host, @NonNull AccessibilityNodeInfo info){
-				super.onInitializeAccessibilityNodeInfo(host, info);
-				info.setClassName("android.widget.Spinner");
-			}
-		});
-		listsDropdownArrow=new FixedAspectRatioImageView(getActivity());
-		listsDropdownArrow.setUseHeight(true);
-		listsDropdownArrow.setImageResource(R.drawable.ic_arrow_drop_down_24px);
-		listsDropdownArrow.setScaleType(ImageView.ScaleType.CENTER);
-		listsDropdownArrow.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-		listsDropdown.addView(listsDropdownArrow, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
-		listsDropdownText=new TextView(getActivity());
-		listsDropdownText.setTextAppearance(R.style.action_bar_title);
-		listsDropdownText.setSingleLine();
-		listsDropdownText.setEllipsize(TextUtils.TruncateAt.END);
-		listsDropdownText.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-		listsDropdownText.setPaddingRelative(V.dp(4), 0, V.dp(16), 0);
-		listsDropdownText.setText(getCurrentListTitle());
-		listsDropdownArrow.setImageTintList(listsDropdownText.getTextColors());
-		listsDropdown.setBackgroundTintList(listsDropdownText.getTextColors());
-		listsDropdown.addView(listsDropdownText, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-		FrameLayout logoWrap=new FrameLayout(getActivity());
-		FrameLayout.LayoutParams ddlp=new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START);
-		ddlp.topMargin=ddlp.bottomMargin=V.dp(8);
-		logoWrap.addView(listsDropdown, ddlp);
-
-		Toolbar toolbar=getToolbar();
-		toolbar.addView(logoWrap, new Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-		toolbar.setContentInsetsRelative(V.dp(16), 0);
+		setTitle(localOnly ? R.string.tab_neighbors : R.string.tab_home);
 	}
 
 	private void showNewPostsButton(){
@@ -850,7 +827,6 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 		refreshing=true;
 		showProgress();
 		loadData();
-		listsDropdownText.setText(getCurrentListTitle());
 		invalidateOptionsMenu();
 	}
 

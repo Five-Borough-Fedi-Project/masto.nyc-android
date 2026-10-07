@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- masto.nyc fork: the local timeline tab. See tools/artwork/README.md for where the pigeon
+     comes from and how to regenerate it. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:drawable="@drawable/ic_pigeon_fill1_24px" android:state_selected="true"/>
+	<item android:drawable="@drawable/ic_pigeon_24px"/>
+</selector>
