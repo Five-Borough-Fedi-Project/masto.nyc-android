@@ -18,6 +18,7 @@ import org.joinmastodon.android.ui.utils.UiUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,16 +34,53 @@ import me.grishka.appkit.utils.V;
  * rather than the first thing in the way.
  */
 public class FollowedHashtagsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
-	private static final int TYPE_HEADER=0, TYPE_TAG=1, TYPE_EMPTY=2;
+	// MergeRecyclerAdapter maps a view type to one adapter, and says so in its own docs: "You MUST
+	// override getItemViewType() in each of your adapters and make sure the returned values don't
+	// intersect across adapters." Upstream's HashtagsAdapter doesn't override it, so every trending
+	// row is type 0. Sharing a type means a recycled row can be handed to the wrong adapter, which
+	// casts it and throws. Hence an offset nothing else uses.
+	private static final int TYPE_OFFSET=0x5B0000;
+	private static final int TYPE_HEADER=TYPE_OFFSET, TYPE_TAG=TYPE_OFFSET+1, TYPE_EMPTY=TYPE_OFFSET+2;
 
 	private final Activity activity;
 	private final String accountID;
+	private RecyclerView list;
 	private final List<Hashtag> tags=new ArrayList<>();
 	private boolean expanded, loaded, loading;
 
 	public FollowedHashtagsAdapter(Activity activity, String accountID){
 		this.activity=activity;
 		this.accountID=accountID;
+		// Show last time's list immediately; the request to refresh it takes seconds.
+		for(String name : ForkPrefs.cachedFollowedHashtags(accountID)){
+			Hashtag tag=new Hashtag();
+			tag.name=name;
+			tags.add(tag);
+		}
+		loaded=!tags.isEmpty();
+	}
+
+	@Override
+	public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView){
+		super.onAttachedToRecyclerView(recyclerView);
+		list=recyclerView;
+	}
+
+	@Override
+	public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView){
+		super.onDetachedFromRecyclerView(recyclerView);
+		list=null;
+	}
+
+	/**
+	 * RecyclerView throws if an adapter changes while it is laying out or settling a scroll, and
+	 * the response to opening this section can land at exactly that moment.
+	 */
+	private void notifyWhenSettled(){
+		if(list!=null && (list.isComputingLayout() || list.getScrollState()!=RecyclerView.SCROLL_STATE_IDLE))
+			list.post(this::notifyDataSetChanged);
+		else
+			notifyDataSetChanged();
 	}
 
 	@NonNull
@@ -59,7 +97,7 @@ public class FollowedHashtagsAdapter extends RecyclerView.Adapter<RecyclerView.V
 	public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position){
 		if(holder instanceof HeaderHolder header)
 			header.bind();
-		else if(holder instanceof TagHolder tag)
+		else if(holder instanceof TagHolder tag && position-1 < tags.size())
 			tag.bind(tags.get(position-1));
 	}
 
@@ -98,14 +136,16 @@ public class FollowedHashtagsAdapter extends RecyclerView.Adapter<RecyclerView.V
 						loaded=true;
 						tags.clear();
 						tags.addAll(result);
-						notifyDataSetChanged();
+						ForkPrefs.setCachedFollowedHashtags(accountID,
+								result.stream().map(t->t.name).collect(Collectors.toList()));
+						notifyWhenSettled();
 					}
 
 					@Override
 					public void onError(ErrorResponse error){
 						loading=false;
 						loaded=true;
-						notifyDataSetChanged();
+						notifyWhenSettled();
 						error.showToast(activity);
 					}
 				})

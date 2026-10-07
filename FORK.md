@@ -138,6 +138,18 @@ Followed hashtags open and close at the top of the Hashtags tab, as `FollowedHas
 finding new hashtags, and it refetches every time it is opened: caching the first response left it
 stale for the rest of the session after following something.
 
+Two things that merging into someone else's adapter demands, both found the hard way:
+
+- View types must not collide. `MergeRecyclerAdapter` maps a type to one adapter, and upstream's
+  trending adapter doesn't override `getItemViewType`, so everything it has is type 0. Sharing
+  that means a recycled row reaches the wrong adapter, which casts it and throws while scrolling.
+  Hence the offset, and `FollowedHashtagsAdapterTest`, which fails if the types ever meet again.
+- The response can land mid-scroll, and RecyclerView throws if an adapter changes during layout,
+  so the update is posted when the list is busy.
+
+The names are cached per account in `ForkPrefs`, because the request behind them takes seconds and
+the section otherwise opens empty every time.
+
 ### Neighbors is its own tab
 
 Upstream puts Home, Local, Lists and Followed hashtags behind a dropdown in the home toolbar. The
