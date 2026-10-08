@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- masto.nyc fork: replaces upstream's Mastodon wordmark vector. Kept at this filename so
-     fragment_splash.xml needs no change beyond the ImageView's height. -->
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-	android:src="@drawable/splash_logo_5bfp"
-	android:gravity="fill"/>
