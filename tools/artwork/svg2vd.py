@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-"""Material Symbols SVG -> Android vector drawable path data.
+"""Material Symbols SVG -> Android vector drawable.
 
-Material Symbols ship on a 960 grid with viewBox "0 -960 960 960", so y runs from -960 to 0.
-Android wants a 0..960 viewport, which means every y shifted by +960. Only absolute commands
-need it; relative ones are deltas. Everything is emitted as absolute M/L/Z, which is what the
-icons already in this repo look like.
+Material Symbols ship on a 960 grid with viewBox "0 -960 960 960", so y runs from -960 to 0 and
+Android wants 0..960.
+
+Two ways to deal with that. Flattening rewrites every coordinate, which only works for icons
+drawn with straight lines; it is what the buildings in this repo use, and it produces path data
+that tools/artwork/rasterize.py can also draw. Wrapping puts the original path, untouched, inside
+a group translated by 960, which works for any icon including the ones with curves -- every park
+and tree icon Material has is curved, and flattening refuses them.
+
+  python3 tools/artwork/svg2vd.py icon.svg            # path data, straight lines only
+  python3 tools/artwork/svg2vd.py --drawable icon.svg # a whole vector drawable, any icon
 """
 import re, sys
 
@@ -74,5 +81,26 @@ def path_of(svg_text):
     if not m: raise SystemExit('no path in svg')
     return m.group(1)
 
+def drawable(svg_text, note=""):
+    """A whole vector drawable, keeping the path exactly as Google wrote it."""
+    return ('<?xml version="1.0" encoding="utf-8"?>\n'
+            + (f'<!-- {note} -->\n' if note else '')
+            + '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
+              '\tandroid:width="24dp"\n\tandroid:height="24dp"\n'
+              '\tandroid:viewportWidth="960"\n\tandroid:viewportHeight="960">\n'
+              '\t<!-- Material ships this on a 0 -960 960 960 viewBox; the translate is what moves\n'
+              '\t     it onto Android\'s 0..960 one, leaving the path data untouched. -->\n'
+              '\t<group android:translateY="960">\n'
+              '\t\t<path\n\t\t\tandroid:fillColor="@android:color/white"\n'
+              f'\t\t\tandroid:pathData="{path_of(svg_text)}"/>\n'
+              '\t</group>\n'
+              '</vector>\n')
+
+
 if __name__ == '__main__':
-    print(convert(path_of(open(sys.argv[1]).read())))
+    args = sys.argv[1:]
+    as_drawable = '--drawable' in args
+    if as_drawable:
+        args.remove('--drawable')
+    text = open(args[0]).read()
+    print(drawable(text) if as_drawable else convert(path_of(text)))
