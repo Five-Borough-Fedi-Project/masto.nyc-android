@@ -256,7 +256,12 @@ public class DiscoverFragment extends AppKitFragment implements ScrollableToTop{
 	@Override
 	public void scrollToTop(){
 		if(!searchActive){
-			((ScrollableToTop)getFragmentForPage(pager.getCurrentItem())).scrollToTop();
+			// masto.nyc fork: tested, not cast. Tapping the selected tab again lands here, and an
+			// unconditional cast turns a tab that doesn't implement this into a crash rather than
+			// into nothing happening. The Lists tab this fork adds was exactly that.
+			// DiscoverFragmentWiringTest fails if any tab stops implementing it.
+			if(getFragmentForPage(pager.getCurrentItem()) instanceof ScrollableToTop scrollable)
+				scrollable.scrollToTop();
 		}else{
 			searchFragment.scrollToTop();
 		}
