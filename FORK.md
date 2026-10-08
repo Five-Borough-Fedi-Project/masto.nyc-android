@@ -397,9 +397,23 @@ illustrations are still upstream's, tracked below.
 Replacements keep the same filename and path, so nothing in the code or layouts has to change and
 there's no extra merge surface.
 
-The launcher icon comes from `5bfplogo.png` (yellow elephant, green Liberty crown). Generated layers
-sit in `drawable-{m,h,x,xx,xxx}hdpi/ic_launcher_elephant{,_mono}.png` on a 108dp canvas with the art
-at 62%, so no launcher mask clips the trunk or crown.
+The launcher icon comes from `5bfplogo.png` (yellow elephant, green Liberty crown). Generated
+layers sit in `drawable-{m,h,x,xx,xxx}hdpi/ic_launcher_elephant.png`, built by
+`tools/artwork/launcher_icon.py`.
+
+This used to say the art was at 62% of the 108dp canvas "so no launcher mask clips the trunk or
+crown", and that was wrong. Only the inner 66dp **circle** of the canvas is guaranteed to survive
+a mask, and a square that fills 66dp has corners outside that circle. The crown's left spike, the
+raised trunk and the bottom of the body sit in those corners, and a screenshot of the launcher
+showed all three cut off. The art is sized by its bounding box's *diagonal* now, which came out at
+45% for the longest side, and the whole mark survives a round mask.
+
+The themed-icon layer is `drawable/ic_launcher_monochrome_path.xml`, a vector traced from the same
+art by `tools/artwork/launcher_mono.py`. It was a PNG; that layer is drawn at whatever size the
+launcher asks for, so a vector is the right shape for it. The silhouette source lives at
+`tools/artwork/launcher-mono.png` rather than as five PNGs in `res/`, since nothing but the tracer
+reads it. The manifest declares `android:roundIcon` alongside `android:icon`, both pointing at the
+adaptive icon, which masks itself.
 
 The splash logo is the 5BFP lockup, keyed off its white JPEG background. Two things there are worth
 knowing if the art gets re-exported:
@@ -430,7 +444,7 @@ became bitmaps. Both were deliberate:
 | --- | --- | --- |
 | `drawable-anydpi-v26/ic_launcher_foreground.xml` | bitmap wrapper | wraps `ic_launcher_elephant` |
 | `drawable-anydpi-v26/ic_launcher_background.xml` | shape | flat `#FFFFFF`, one line to retheme |
-| `drawable-anydpi-v26/ic_launcher_monochrome.xml` | bitmap wrapper | wraps `ic_launcher_elephant_mono` |
+| `drawable/ic_launcher_monochrome_path.xml` | vector | themed-icon silhouette, 108dp |
 | `res/mipmap-*/ic_launcher.png` | PNG ×5 | 48-192px, API 23-25 only |
 | `res/drawable/splash_logo.xml` | bitmap wrapper | wraps `splash_logo_5bfp` |
 | `res/drawable/ic_ntf_logo.xml` | vector | 24×24dp, Liberty crown |

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- masto.nyc fork: themed-icon silhouette. The system tints this, so only its alpha matters. -->
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-	android:src="@drawable/ic_launcher_elephant_mono"
-	android:gravity="fill"/>
