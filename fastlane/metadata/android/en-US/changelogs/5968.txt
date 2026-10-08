@@ -1,6 +1,0 @@
-The first big update since launch.
-
-- A Neighbors tab for the masto.nyc feed, alongside Home for the people you follow. Choose which one the app opens on in Settings.
-- Your lists and the hashtags you follow are on the search screen.
-- Settings is a single page, with a link to donate.
-- Fixed a crash when opening the Lists tab twice, and one when scrolling your followed hashtags.
