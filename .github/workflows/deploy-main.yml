@@ -1,0 +1,185 @@
+name: Deploy main to internal testing
+
+# Every merge to main goes to the internal track. Testers get what main says without anyone
+# tagging anything.
+#
+# versionCode is the number of commits on main. It only ever goes up, and the same commit always
+# produces the same number, which is the property Play needs: a versionCode can be used once and
+# never reused. Shipping to production is promoting one of these builds with
+# promote-play-release.yml, so production only ever gets something testers have already had.
+#
+# Release notes are the commit subjects since the last push. They are developer sentences, which
+# is the right register for an internal build; a production promotion gets written notes.
+#
+# Docs-only pushes are skipped, so editing FORK.md doesn't burn a versionCode.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Validate against Play without publishing anything"
+        type: boolean
+        default: false
+
+# One deploy at a time, and never cancel one that is mid-upload: a cancelled upload can leave Play
+# holding a versionCode that nothing here knows about.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # rev-list --count needs the whole history, not the default shallow clone.
+          fetch-depth: 0
+
+      - name: Work out the version
+        id: version
+        run: |
+          set -euo pipefail
+          CODE=$(git rev-list --count HEAD)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          NAME="${LAST_TAG#v}.$CODE"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "Building $NAME, versionCode $CODE, from $LAST_TAG"
+
+      # Play falls back to default.txt when a versionCode has no notes of its own, and default.txt
+      # still says "released the first version!". Write real ones rather than ship that.
+      - name: Write the release notes
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          FILE="fastlane/metadata/android/en-US/changelogs/${{ steps.version.outputs.code }}.txt"
+          RANGE="HEAD~1..HEAD"
+          if [ -n "${BEFORE:-}" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+              && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            RANGE="$BEFORE..HEAD"
+          fi
+          git log --no-merges --format='- %s' "$RANGE" > /tmp/notes.txt || true
+          if [ ! -s /tmp/notes.txt ]; then
+            echo "- Internal build from main." > /tmp/notes.txt
+          fi
+          # Play rejects notes over 500 characters.
+          head -c 480 /tmp/notes.txt > "$FILE"
+          # head -c can cut mid-line; drop a trailing partial one.
+          if [ "$(wc -c < /tmp/notes.txt)" -gt 480 ]; then
+            sed -i '$d' "$FILE"
+            echo "- ..." >> "$FILE"
+          fi
+          echo "Release notes for versionCode ${{ steps.version.outputs.code }}:"
+          cat "$FILE"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3.0
+          bundler-cache: true
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-37.0 platform-tools"
+
+      - name: Decode keystore
+        uses: timheuer/base64-to-file@v1
+        id: android_keystore
+        with:
+          fileName: "release.jks"
+          encodedString: ${{ secrets.KEYSTORE_FILE }}
+
+      - name: Prepare Gradle environment
+        run: |
+          echo "apply from: 'ci_signing.gradle'" >> mastodon/build.gradle
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Remove translations from fastlane metadata
+        run: |
+          mv fastlane/metadata/android fastlane/metadata/android_orig
+          mkdir fastlane/metadata/android
+          mv fastlane/metadata/android_orig/en-US fastlane/metadata/android/
+
+      # CI already ran these on the pull request, but main can move by a route that never saw one,
+      # and this is the build that reaches testers.
+      - name: Run checks
+        run: ./gradlew testDebugUnitTest lintDebug --console=plain
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          BUILD_NUMBER: ${{ steps.version.outputs.code }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+
+      - name: Build the bundle
+        run: ./gradlew bundleRelease --console=plain
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          BUILD_NUMBER: ${{ steps.version.outputs.code }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+
+      # Always validate first. A rejection then costs a failed job rather than a burnt versionCode,
+      # which can never be reused.
+      - name: Validate the upload against Google Play
+        run: bundle exec fastlane deploy
+        env:
+          PLAY_VALIDATE_ONLY: true
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          BUILD_NUMBER: ${{ steps.version.outputs.code }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+          PLAY_TRACK: internal
+          PLAY_RELEASE_STATUS: completed
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          SUPPLY_SKIP_UPLOAD_METADATA: true
+
+      - name: Upload to the internal track
+        if: ${{ !inputs.dry_run }}
+        run: bundle exec fastlane deploy
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          BUILD_NUMBER: ${{ steps.version.outputs.code }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+          PLAY_TRACK: internal
+          PLAY_RELEASE_STATUS: completed
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          SUPPLY_SKIP_UPLOAD_METADATA: true
+
+      # fastlane has reported success for an upload that changed nothing, so don't trust the exit
+      # code: read the track back and check the build is actually on it.
+      - name: Confirm it is on the internal track
+        if: ${{ !inputs.dry_run }}
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          set -euo pipefail
+          pip install --quiet google-auth
+          python3 tools/play-status.py \
+            --expect "internal:${{ steps.version.outputs.code }}:completed"
+
+      - name: Keep the mapping file
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-${{ steps.version.outputs.code }}
+          path: mastodon/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: ignore

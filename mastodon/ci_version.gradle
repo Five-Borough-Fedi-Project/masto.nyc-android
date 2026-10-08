@@ -6,13 +6,43 @@
 // forever, and leaves its versionName as an accurate record of which upstream release we're on.
 
 // Applied unconditionally from fork.gradle so that a local build and a CI build behave the same.
-// Without RELEASE_TAG we leave upstream's versionCode and versionName alone, which is what an
-// ordinary debug build wants. Set RELEASE_TAG and the version comes from the tag, wherever you
-// are. Two ways to build the same artifact is how a release bundle ends up stamped 2.13.2.
+// Without RELEASE_TAG or BUILD_NUMBER we leave upstream's versionCode and versionName alone,
+// which is what an ordinary debug build wants. Two ways to build the same artifact is how a
+// release bundle ends up stamped 2.13.2.
+//
+// BUILD_NUMBER is the number of commits on main, and it is the versionCode for everything we
+// publish. Every merge produces a higher one, and the same commit always produces the same one,
+// which is what lets main deploy itself to the internal track without a human choosing numbers.
+// A versionCode can only ever be used once, so it has to come from something that only goes up.
+//
+// RELEASE_TAG still sets the versionName, because GithubSelfUpdaterImpl compares versionNames
+// and wants vX.Y.Z. Without a tag the name is VERSION_NAME, which main's deploy sets to the last
+// tag plus the build number.
 def tag = System.getenv("RELEASE_TAG")
+def buildNumber = System.getenv("BUILD_NUMBER")
+if (!tag && !buildNumber) {
+	logger.lifecycle("ci_version: neither RELEASE_TAG nor BUILD_NUMBER set, keeping upstream's " +
+			"version. Set them when building anything you intend to publish.")
+	return
+}
+
+// No tag: a build of main. The name comes from VERSION_NAME and the code from BUILD_NUMBER.
 if (!tag) {
-	logger.lifecycle("ci_version: RELEASE_TAG not set, keeping upstream's version. " +
-			"Set it to vX.Y.Z when building anything you intend to publish.")
+	def name = System.getenv("VERSION_NAME")
+	if (!name) {
+		throw new GradleException("BUILD_NUMBER is set without RELEASE_TAG, so this is a build of " +
+				"main, but VERSION_NAME is not set and there is nothing to call it.")
+	}
+	def mainCode = buildNumber as int
+	def upstreamName = android.defaultConfig.versionName
+	android {
+		defaultConfig {
+			versionName name
+			versionCode mainCode
+		}
+	}
+	println "ci_version: main build -> versionName ${name}, versionCode ${mainCode} " +
+			"(upstream base ${upstreamName})"
 	return
 }
 
@@ -33,7 +63,10 @@ def patch = m[0][3] as int
 if (minor > 999 || patch > 999) {
 	throw new GradleException("RELEASE_TAG '${tag}': minor and patch must each be <= 999.")
 }
-def code = major * 1000000 + minor * 1000 + patch
+// BUILD_NUMBER wins when both are set, so a tagged build and main's own build of the same commit
+// agree on the code. Without that the two channels would hand the same install different numbers
+// and one of them could not be installed over the other.
+def code = buildNumber ? (buildNumber as int) : (major * 1000000 + minor * 1000 + patch)
 if (code > 2100000000) {
 	throw new GradleException("RELEASE_TAG '${tag}' produces versionCode ${code}, over Google Play's limit.")
 }
@@ -50,4 +83,4 @@ android {
 }
 
 println "ci_version: ${tag} -> versionName ${major}.${minor}.${patch}, versionCode ${code} " +
-		"(upstream base ${upstreamVersion})"
+		"(${buildNumber ? 'from BUILD_NUMBER' : 'from the tag'}, upstream base ${upstreamVersion})"
