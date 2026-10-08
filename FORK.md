@@ -338,7 +338,10 @@ main.
 
 Release notes for an automatic build are the commit subjects since the last push, truncated to
 Play's 500-character limit. Developer sentences are the right register for an internal build. A
-production promotion gets written notes.
+production promotion gets written notes, passed to `promote-play-release.yml` as an input rather
+than committed: the internal track holds one release at a time, so committing notes for the build
+you meant to promote uploads a new build that replaces it, and committing again does the same.
+Promote the build that is on the track now, and give it its notes in the same run.
 
 Docs-only pushes are skipped, so editing this file does not burn a versionCode.
 

@@ -25,9 +25,12 @@ on:
         options: [completed, inProgress, halted, draft]
         default: completed
       update_notes:
-        description: "Replace the release notes from changelogs/<versionCode>.txt"
+        description: "Replace the release notes"
         type: boolean
         default: false
+      notes:
+        description: "Release notes to publish. Leave empty to use changelogs/<versionCode>.txt."
+        required: false
       dry_run:
         description: "Validate against Play without changing anything"
         type: boolean
@@ -61,15 +64,31 @@ jobs:
           mkdir fastlane/metadata/android
           mv fastlane/metadata/android_orig/en-US fastlane/metadata/android/
 
-      - name: Assert the notes exist
+      # Notes can be given here rather than committed, and that is usually what you want. Every
+      # merge to main uploads a new build, and the internal track holds one release at a time, so
+      # committing notes for the build you meant to promote replaces that build with a new one.
+      # Chasing it with another commit does the same thing again.
+      - name: Work out the notes
         if: ${{ inputs.update_notes }}
         env:
           CODE: ${{ inputs.version_code }}
+          NOTES: ${{ inputs.notes }}
         run: |
           set -euo pipefail
           FILE="fastlane/metadata/android/en-US/changelogs/$CODE.txt"
-          if [ ! -s "$FILE" ]; then
-            echo "::error::$FILE is missing or empty, so there is nothing to replace the notes with."
+          if [ -n "${NOTES:-}" ]; then
+            mkdir -p "$(dirname "$FILE")"
+            printf '%s\n' "$NOTES" > "$FILE"
+            echo "Using the notes given to this run."
+          elif [ ! -s "$FILE" ]; then
+            echo "::error::No notes were given and $FILE is missing, so there is nothing to"
+            echo "::error::replace the release notes with."
+            exit 1
+          else
+            echo "Using the committed $FILE."
+          fi
+          if [ "$(wc -c < "$FILE")" -gt 500 ]; then
+            echo "::error::The notes are $(wc -c < "$FILE") characters; Play's limit is 500."
             exit 1
           fi
           echo "Release notes that will be published for $CODE:"
