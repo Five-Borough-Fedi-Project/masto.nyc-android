@@ -63,7 +63,11 @@ platform :android do
       skip_upload_aab: true,
       skip_upload_apk: true,
       skip_upload_metadata: true,
-      skip_upload_changelogs: true,
+      # A promotion carries the notes the build was uploaded with, which for an automatic build
+      # of main are commit subjects. That is the right register for testers and the wrong one for
+      # the store, so a promotion to a public track can replace them from
+      # changelogs/<versionCode>.txt. Off by default: most promotions should not rewrite history.
+      skip_upload_changelogs: ENV["PLAY_UPLOAD_NOTES"] != "true",
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
