@@ -1,0 +1,5 @@
+- Fixed a crash when you tapped the Lists tab while it was already open.
+- You can create a list from Explore > Lists again.
+- Settings is a single page now, with a link to donate, and "Opening tab" is called "Default view".
+- The app icon no longer has its edges cut off by round icon masks.
+- A new Neighbors tab icon, and the welcome screen says Masto NYC.
