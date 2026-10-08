@@ -167,11 +167,18 @@ The app opens on Neighbors, which Settings > Behavior > "Opening tab" can change
 keeps that out of upstream's `GlobalUserPreferences`, in its own SharedPreferences file, so
 neither file conflicts.
 
-The home tab's icon is Material's `location_city`, which has no distinct filled variant, so the
-selected state reads through the tab colours. The Neighbors icon is derived from Five Borough Fedi
-Project's pigeon drawing by `tools/artwork/pigeonize.py`, which rebuilds it at the weight Material
-tab icons use; a straight trace of the drawing is too faint to read at 24dp.
-[tools/artwork/README.md](tools/artwork/README.md) covers regenerating it.
+Both tab icons are buildings, which is the point: a New Yorker already lives in a building, so the
+community the Neighbors tab stands for is buildings of buildings. Neighbors is Material's
+`location_city`, a stepped skyline, and Home is `apartment`, one block with a doorway. Neither has
+a distinct filled variant to switch to when selected -- Google ships FILL=1 for both, and for
+these two it is byte for byte the outline, because they are already solid shapes with the windows
+knocked out -- so the selected state reads through the tab colours and the active indicator, as
+the labels do.
+
+Neighbors was a pigeon derived from Five Borough Fedi Project's own drawing before that. The
+drawing and the pipeline that turns it into an icon are still in
+[tools/artwork/](tools/artwork/README.md); only the generated drawables were removed, rather than
+leaving them in `res/` unreferenced.
 
 ### Settings behind the profile tab
 

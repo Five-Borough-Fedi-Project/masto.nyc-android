@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- masto.nyc fork: the home tab is a block of flats rather than a house. location_city has no
-     distinct filled variant, so the selected state reads through @color/tab_bar_icon and the tab
-     background, as the labels do. -->
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:drawable="@drawable/ic_location_city_24px"/>
-</selector>

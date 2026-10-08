@@ -67,7 +67,7 @@
 				android:scaleType="center"
 				android:importantForAccessibility="no"
 				android:tint="@color/tab_bar_icon"
-				android:src="@drawable/ic_tab_home_city"/>
+				android:src="@drawable/ic_tab_home_apartment"/>
 			
 			<TextView
 				android:id="@+id/label"
