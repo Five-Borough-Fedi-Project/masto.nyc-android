@@ -24,6 +24,10 @@ on:
         type: choice
         options: [completed, inProgress, halted, draft]
         default: completed
+      update_notes:
+        description: "Replace the release notes from changelogs/<versionCode>.txt"
+        type: boolean
+        default: false
       dry_run:
         description: "Validate against Play without changing anything"
         type: boolean
@@ -47,6 +51,29 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
+
+      # supply walks every language it finds, and the rest are Crowdin translations of upstream's
+      # listing. Same trimming the deploy workflow does.
+      - name: Remove translations from fastlane metadata
+        if: ${{ inputs.update_notes }}
+        run: |
+          mv fastlane/metadata/android fastlane/metadata/android_orig
+          mkdir fastlane/metadata/android
+          mv fastlane/metadata/android_orig/en-US fastlane/metadata/android/
+
+      - name: Assert the notes exist
+        if: ${{ inputs.update_notes }}
+        env:
+          CODE: ${{ inputs.version_code }}
+        run: |
+          set -euo pipefail
+          FILE="fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+          if [ ! -s "$FILE" ]; then
+            echo "::error::$FILE is missing or empty, so there is nothing to replace the notes with."
+            exit 1
+          fi
+          echo "Release notes that will be published for $CODE:"
+          cat "$FILE"
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -79,6 +106,7 @@ jobs:
           PLAY_TRACK: ${{ inputs.from_track }}
           PLAY_PROMOTE_TO: ${{ inputs.to_track }}
           PLAY_RELEASE_STATUS: ${{ inputs.status }}
+          PLAY_UPLOAD_NOTES: ${{ inputs.update_notes }}
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
 
       - name: Promote on Google Play
@@ -89,6 +117,7 @@ jobs:
           PLAY_TRACK: ${{ inputs.from_track }}
           PLAY_PROMOTE_TO: ${{ inputs.to_track }}
           PLAY_RELEASE_STATUS: ${{ inputs.status }}
+          PLAY_UPLOAD_NOTES: ${{ inputs.update_notes }}
           SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
 
       # fastlane reported success for a promotion that did nothing, so read the tracks back and
