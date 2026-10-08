@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
-"""Renders the M/L/Z path data from a vector drawable to a PNG, so it can be looked at."""
+"""Renders the M/L/Z path data from a vector drawable to a PNG, so it can be looked at.
+
+The viewport is read from the file rather than assumed. The fork's own artwork is drawn on a
+24-unit grid and Material Symbols come on a 960 one, and rendering the second with the first's
+scale silently produces a magnified corner that looks like a blank image."""
 import re, struct, sys, zlib
+
+def viewport(xml):
+    m = re.search(r'android:viewportWidth="([0-9.]+)"', xml)
+    return float(m.group(1)) if m else 24.0
+
 
 def parse(xml):
     data = re.search(r'android:pathData="([^"]+)"', xml).group(1)
@@ -16,8 +25,8 @@ def parse(xml):
     if cur: loops.append(cur)
     return loops
 
-def render(loops, size, pad=1.0):
-    scale = (size - 2 * pad) / 24.0
+def render(loops, size, view=24.0, pad=1.0):
+    scale = (size - 2 * pad) / view
     px = [[255] * size for _ in range(size)]
     # even-odd scanline fill, 3x3 supersampled so edges don't look like a staircase
     ss = 3
@@ -49,8 +58,10 @@ def write_png(path, px):
         + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b''))
 
 for name in sys.argv[1:]:
-    loops = parse(open(name).read())
+    xml = open(name).read()
+    loops = parse(xml)
+    view = viewport(xml)
     for size in (96, 24):
         out = name.replace('.xml', f'-{size}.png')
-        write_png(out, render(loops, size))
-        print(f"{out}: {len(loops)} loops")
+        write_png(out, render(loops, size, view))
+        print(f"{out}: {len(loops)} loops on a {view:g} grid")

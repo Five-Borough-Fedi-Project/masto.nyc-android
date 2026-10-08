@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- masto.nyc fork: the rows of the "Hashtags you follow" section, tinted so the section reads as
+     yours and separate from upstream's trending list immediately below it, which is otherwise
+     laid out identically. Same ripple as bg_button_m3_text over a surface-variant fill. -->
+<ripple android:color="@color/m3_primary_overlay" xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:id="@android:id/mask">
+		<shape>
+			<solid android:color="#000"/>
+		</shape>
+	</item>
+	<item>
+		<shape>
+			<solid android:color="?colorM3SurfaceVariant"/>
+		</shape>
+	</item>
+</ripple>
