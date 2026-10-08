@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- masto.nyc fork: Home is the one building you live in; Neighbors is the city of them. Neither
+     icon has a filled variant to switch to when selected, so the selected state reads through
+     @color/tab_bar_icon and the tab background, as the labels do. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:drawable="@drawable/ic_apartment_24px"/>
+</selector>
