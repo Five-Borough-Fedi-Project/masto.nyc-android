@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- masto.nyc fork: as bg_followed_hashtags_row, plus a rule along the bottom, so the tinted
+     block has a visible edge where upstream's trending list begins. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:drawable="@drawable/bg_followed_hashtags_row"/>
+	<item android:gravity="bottom">
+		<shape>
+			<size android:height="1dp"/>
+			<solid android:color="?colorM3OutlineVariant"/>
+		</shape>
+	</item>
+</layer-list>

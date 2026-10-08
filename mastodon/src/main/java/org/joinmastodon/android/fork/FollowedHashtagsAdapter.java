@@ -99,6 +99,12 @@ public class FollowedHashtagsAdapter extends RecyclerView.Adapter<RecyclerView.V
 			header.bind();
 		else if(holder instanceof TagHolder tag && position-1 < tags.size())
 			tag.bind(tags.get(position-1));
+		// The tint marks the section as yours; the rule on the last row is where it ends and
+		// upstream's trending list begins. Without either, the two are laid out identically and
+		// read as one list.
+		holder.itemView.setBackgroundResource(position==getItemCount()-1
+				? R.drawable.bg_followed_hashtags_row_last
+				: R.drawable.bg_followed_hashtags_row);
 	}
 
 	@Override
@@ -214,7 +220,9 @@ public class FollowedHashtagsAdapter extends RecyclerView.Adapter<RecyclerView.V
 		row.setOrientation(LinearLayout.HORIZONTAL);
 		row.setGravity(Gravity.CENTER_VERTICAL);
 		row.setPaddingRelative(V.dp(16), V.dp(12), V.dp(16), V.dp(12));
-		row.setBackgroundResource(R.drawable.bg_button_m3_text);
+		// Replaced per row in onBindViewHolder, which is the only place that knows whether this is
+		// the last row of the section.
+		row.setBackgroundResource(R.drawable.bg_followed_hashtags_row);
 		row.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 		return row;
 	}
