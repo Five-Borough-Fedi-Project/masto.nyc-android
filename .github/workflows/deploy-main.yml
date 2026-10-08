@@ -51,7 +51,12 @@ jobs:
           set -euo pipefail
           CODE=$(git rev-list --count HEAD)
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          NAME="${LAST_TAG#v}.$CODE"
+          # The name is the tag alone. It used to carry the build number too, which is fine on an
+          # internal build and looks like a mistake on a store listing; a promoted build keeps the
+          # name it was uploaded with, so the public would have seen 0.1.10.5962. The build number
+          # is still the versionCode, and settings shows both, so nothing is lost telling two
+          # builds apart.
+          NAME="${LAST_TAG#v}"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "Building $NAME, versionCode $CODE, from $LAST_TAG"
