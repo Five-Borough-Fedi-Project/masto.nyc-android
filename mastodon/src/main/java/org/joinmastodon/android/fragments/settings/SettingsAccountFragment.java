@@ -60,7 +60,9 @@ public class SettingsAccountFragment extends BaseSettingsFragment<Void>{
 		}
 
 		items.add(new SectionHeaderListItem(R.string.manage_account));
-		items.add(new ListItem<>(R.string.switch_to_this_account, 0, R.drawable.ic_switch_account_24px, AccountSessionManager.getInstance().getLastActiveAccountID().equals(accountID) ? null : this::onSwitchAccountClick));
+		// masto.nyc fork: no "switch to this account". One account per install, so it is always
+		// the active one and the row never does anything. This screen is still reachable from
+		// your own profile, so it is removed here as well as from the settings page.
 		items.add(new ListItem<>(R.string.delete_account, 0, R.drawable.ic_delete_forever_24px, this::onDeleteAccountClick, R.attr.colorM3Error, false));
 		items.add(new ListItem<>(R.string.log_out, 0, R.drawable.ic_logout_24px, this::onLogOutClick, R.attr.colorM3Error, false));
 

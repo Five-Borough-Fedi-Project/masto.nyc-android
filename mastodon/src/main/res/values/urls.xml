@@ -2,4 +2,8 @@
 <resources>
 	<string name="github_url" translatable="false">https://github.com/Five-Borough-Fedi-Project/masto.nyc-android</string>
 	<string name="privacy_policy_url" translatable="false">https://masto.nyc/privacy-policy</string>
+	<!-- masto.nyc fork: the organisation, not just this repository. -->
+	<string name="fork_github_org_url" translatable="false">https://github.com/Five-Borough-Fedi-Project</string>
+	<!-- masto.nyc fork: the donation page. -->
+	<string name="fork_donate_url" translatable="false">https://5bfp.org/give</string>
 </resources>

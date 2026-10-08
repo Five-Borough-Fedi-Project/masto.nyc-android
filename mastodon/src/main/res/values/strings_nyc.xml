@@ -3,7 +3,11 @@
      won't take the same resource name from two files in one source set. See FORK.md. -->
 <resources>
 	<string name="tab_neighbors">Neighbors</string>
-	<string name="settings_opening_tab">Opening tab</string>
+	<string name="settings_opening_tab">Default view</string>
 	<string name="your_followed_hashtags">Hashtags you follow</string>
 	<string name="no_followed_hashtags">You don\'t follow any hashtags yet</string>
+	<string name="settings_donate_5bfp">Donate</string>
+	<string name="settings_donate_5bfp_explanation">Masto NYC runs on donations</string>
+	<string name="settings_fork_github">Five Borough Fedi Project on GitHub</string>
+	<string name="settings_about">About</string>
 </resources>
