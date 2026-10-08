@@ -324,7 +324,10 @@ production only ever gets something testers have already run.
 the property Play needs: it only goes up, and the same commit always produces the same number. A
 versionCode can be used once and never reused, so it cannot come from anything a human picks
 twice. `BUILD_NUMBER` carries it; `RELEASE_TAG` still sets the `versionName`, because the
-self-updater compares names and wants vX.Y.Z.
+self-updater compares names and wants vX.Y.Z. An automatic build is named for the last tag alone:
+a promoted build keeps the name it was uploaded with, so a build number in there ends up on the
+store listing. Two builds sharing a name is fine, since only the code has to be unique and
+settings shows both.
 
 The two tag workflows changed to match. `release-apk.yml` passes `BUILD_NUMBER` too, so the APK
 attached to a GitHub release and the bundle main uploaded for the same commit carry the same

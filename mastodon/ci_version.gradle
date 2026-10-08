@@ -17,7 +17,8 @@
 //
 // RELEASE_TAG still sets the versionName, because GithubSelfUpdaterImpl compares versionNames
 // and wants vX.Y.Z. Without a tag the name is VERSION_NAME, which main's deploy sets to the last
-// tag plus the build number.
+// tag. Two builds can share a versionName; only the code has to be unique, and settings shows
+// both.
 def tag = System.getenv("RELEASE_TAG")
 def buildNumber = System.getenv("BUILD_NUMBER")
 if (!tag && !buildNumber) {
