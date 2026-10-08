@@ -84,15 +84,42 @@
 		android:clipToPadding="false"
 		android:orientation="vertical">
 		
-		<!-- masto.nyc fork: 300x129dp matches the 5BFP lockup's 2.32:1, so fitCenter doesn't
-		     letterbox it. Upstream's Mastodon wordmark was 3.86:1 at 300x78dp. -->
+		<!-- masto.nyc fork: the mark on its own, with the name set in type under it. The artwork
+		     is the full 5BFP lockup, mark and the word "5BFP" together; splash_mark_5bfp is the
+		     mark cropped out of it by tools/artwork/splash_mark.py. Dark text, because this sits
+		     over the pale sky at the top of the art. -->
 		<ImageView
-			android:layout_width="300dp"
-			android:layout_height="129dp"
+			android:layout_width="wrap_content"
+			android:layout_height="104dp"
+			android:adjustViewBounds="true"
 			android:layout_gravity="center_horizontal"
 			android:layout_marginTop="32dp"
 			android:importantForAccessibility="no"
-			android:src="@drawable/splash_logo"/>
+			android:src="@drawable/splash_mark_5bfp"/>
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center_horizontal"
+			android:layout_marginTop="8dp"
+			android:text="@string/app_name"
+			android:textColor="#1A1A1A"
+			android:textSize="34sp"
+			android:textStyle="bold"
+			android:shadowColor="#99FFFFFF"
+			android:shadowRadius="8"/>
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center_horizontal"
+			android:layout_marginTop="2dp"
+			android:importantForAccessibility="no"
+			android:text="@string/splash_byline"
+			android:textColor="#1A1A1A"
+			android:textSize="13sp"
+			android:shadowColor="#99FFFFFF"
+			android:shadowRadius="6"/>
 
 		<Space
 			android:layout_width="1px"

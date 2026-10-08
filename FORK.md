@@ -59,7 +59,7 @@ Conflicts should be confined to the files below.
 | `.../api/requests/oauth/CreateOAuthApp.java` | OAuth client name and website |
 | `.../api/MastodonAPIController.java`, `.../MastodonApp.java` | `User-Agent`, see [below](#user-agent) |
 | `.../updater/GithubSelfUpdaterImpl.java` | self-update from this repo, not upstream's |
-| `res/drawable/splash_logo.xml`, `res/drawable/ic_ntf_logo.xml` | replaced artwork |
+| `res/drawable-*/splash_mark_5bfp.png`, `res/drawable/ic_ntf_logo.xml` | replaced artwork |
 | `res/drawable-anydpi-v26/ic_launcher_{foreground,background,monochrome}.xml` | replaced artwork |
 | `res/mipmap-*/ic_launcher.png` | replaced artwork |
 | `README.md`, `fastlane/metadata/android/en-US/*` | store listing and repo docs |
@@ -408,9 +408,12 @@ knowing if the art gets re-exported:
   to knock through, or they read as printing errors against the blue. The background was found by
   flooding inward from the border; the counters were isolated by eroding the enclosed white regions
   to seeds, which erases the small eye highlight, then flooding those seeds back out.
-- The lockup is 2.32:1 against the 3.86:1 of upstream's wordmark, so the ImageView in
-  `fragment_splash.xml` went from 300×78dp to 300×129dp. Re-export at a different ratio and that
-  height needs updating, or `fitCenter` letterboxes it.
+- The welcome screen shows only the mark now, with the name set in type under it: "Masto NYC",
+  and "by the Five Borough Fedi Project" small below that. `tools/artwork/splash_mark.py` crops
+  the mark out of the lockup, deciding what belongs to it by connected components rather than by
+  a column cut, because the raised trunk and the "5" overlap horizontally and any cut that keeps
+  the whole trunk also keeps a sliver of the 5. The full lockup lives in
+  `tools/artwork/splash-logo/`, out of `res/`, so it is kept without being shipped.
 
 `ic_ntf_logo` is the Liberty crown on its own, and it stayed a vector while the other replacements
 became bitmaps. Both were deliberate:
@@ -432,7 +435,7 @@ became bitmaps. Both were deliberate:
 | `drawable-anydpi-v26/ic_launcher_background.xml` | shape | flat `#FFFFFF`, one line to retheme |
 | `drawable-anydpi-v26/ic_launcher_monochrome.xml` | bitmap wrapper | wraps `ic_launcher_elephant_mono` |
 | `res/mipmap-*/ic_launcher.png` | PNG ×5 | 48-192px, API 23-25 only |
-| `res/drawable/splash_logo.xml` | bitmap wrapper | wraps `splash_logo_5bfp` |
+| `res/drawable-*/splash_mark_5bfp.png` | PNG ×5 | the mark, cropped from the lockup |
 | `res/drawable/ic_ntf_logo.xml` | vector | 24×24dp, Liberty crown |
 | `fastlane/.../images/icon.png` | PNG | 512×512, full-bleed, opaque |
 | `fastlane/.../images/featureGraphic.png` | PNG | 1024×500, subway scene |
