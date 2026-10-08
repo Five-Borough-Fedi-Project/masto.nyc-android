@@ -315,6 +315,32 @@ is the only thing that will prove the reader works end to end.
 
 ### Releasing to Play
 
+Main deploys itself. Every merge builds and uploads to the internal track through
+`deploy-main.yml`, so testers get what main says without anyone tagging anything. Shipping to
+production is promoting one of those builds with `promote-play-release.yml`, which means
+production only ever gets something testers have already run.
+
+`versionCode` is the number of commits on main. It is the one rule for every channel, and it has
+the property Play needs: it only goes up, and the same commit always produces the same number. A
+versionCode can be used once and never reused, so it cannot come from anything a human picks
+twice. `BUILD_NUMBER` carries it; `RELEASE_TAG` still sets the `versionName`, because the
+self-updater compares names and wants vX.Y.Z.
+
+The two tag workflows changed to match. `release-apk.yml` passes `BUILD_NUMBER` too, so the APK
+attached to a GitHub release and the bundle main uploaded for the same commit carry the same
+number and can be installed over each other. `build_and_deploy.yml` no longer runs when a release
+is published, because the code it derived from the tag (1010 for v0.1.10) is far below the ones
+main now uploads, and Play will not take it; it is manual-only, for a tag that is not the tip of
+main.
+
+Release notes for an automatic build are the commit subjects since the last push, truncated to
+Play's 500-character limit. Developer sentences are the right register for an internal build. A
+production promotion gets written notes.
+
+Docs-only pushes are skipped, so editing this file does not burn a versionCode.
+
+#### The older, manual path
+
 `PLAY_TRACK` and `PLAY_RELEASE_STATUS` are repository variables, so where a release lands is a
 settings change rather than a code change. With `PLAY_RELEASE_STATUS=completed`, publishing a
 GitHub release rolls out to production with no Play Console visit.

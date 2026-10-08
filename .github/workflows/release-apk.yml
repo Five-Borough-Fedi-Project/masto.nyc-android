@@ -48,6 +48,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
+          # rev-list --count below needs the whole history, not the default shallow clone.
+          fetch-depth: 0
+
+      # The same rule as Play: versionCode is the number of commits. Without this the APK here
+      # and the bundle main uploaded for the same commit would carry different numbers, and
+      # whichever is lower could not be installed over the other.
+      - name: Work out the build number
+        id: version
+        run: echo "code=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -87,6 +96,7 @@ jobs:
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          BUILD_NUMBER: ${{ steps.version.outputs.code }}
 
       - name: Name the artifact after the release
         id: artifact

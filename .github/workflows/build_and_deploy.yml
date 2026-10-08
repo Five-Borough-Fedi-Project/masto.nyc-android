@@ -1,15 +1,18 @@
 name: Build and deploy production
 
-# Publishes to Google Play on a published GitHub release, alongside release-apk.yml which attaches
-# the APK to the release itself.
+# Manual only. Publishing to Play happens by itself now: deploy-main.yml sends every merge to the
+# internal track, and production is a promotion of one of those builds with
+# promote-play-release.yml. That way production only ever gets a build testers already had.
+#
+# This is kept for the cases that model does not cover, such as shipping a tag that is not the tip
+# of main. It no longer runs when a GitHub release is published, because the versionCode it would
+# derive from the tag is below the ones main is uploading, and Play will not take it.
 #
 # The first upload for a new app cannot come from here. Google's Play Developer API refuses to
 # operate on an app that has never had a build uploaded through the Console, and fastlane surfaces
 # that as a confusing "app not found". Do one manual upload first; see SETUP.md.
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
