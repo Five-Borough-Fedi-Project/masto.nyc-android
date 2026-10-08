@@ -30,11 +30,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import me.grishka.appkit.Nav;
+import me.grishka.appkit.fragments.AppKitFragment;
 import me.grishka.appkit.api.Callback;
 import me.grishka.appkit.api.ErrorResponse;
 import me.grishka.appkit.api.SimpleCallback;
 
-public class ManageListsFragment extends BaseSettingsFragment<FollowList> implements ListItemWithOptionsMenu.OptionsMenuListener<FollowList>{
+// masto.nyc fork: ScrollableToTop, because this fork shows this fragment as a tab on the search
+// screen and DiscoverFragment casts the selected tab's fragment to it when you tap that tab again.
+public class ManageListsFragment extends BaseSettingsFragment<FollowList> implements ListItemWithOptionsMenu.OptionsMenuListener<FollowList>, ScrollableToTop{
+	@Override
+	public void scrollToTop(){
+		smoothScrollRecyclerViewToTop(list);
+	}
+
 	private ImageButton fab;
 
 	public ManageListsFragment(){
@@ -61,7 +69,13 @@ public class ManageListsFragment extends BaseSettingsFragment<FollowList> implem
 		Callback<List<FollowList>> callback=new SimpleCallback<>(this){
 			@Override
 			public void onSuccess(List<FollowList> result){
-				onDataLoaded(result.stream().map(ManageListsFragment.this::makeItem).collect(Collectors.toList()), false);
+				List<ListItem<FollowList>> items=result.stream().map(ManageListsFragment.this::makeItem)
+						.collect(Collectors.toCollection(java.util.ArrayList::new));
+				// masto.nyc fork: as a tab there is nowhere for the FAB to go, so creating a list
+				// is a row. See makeCreateItem.
+				if(isTab())
+					items.add(0, makeCreateItem());
+				onDataLoaded(items, false);
 			}
 		};
 		if(refreshing){
@@ -73,6 +87,29 @@ public class ManageListsFragment extends BaseSettingsFragment<FollowList> implem
 					.getCacheController()
 					.getLists(callback);
 		}
+	}
+
+	/**
+	 * masto.nyc fork: true when this is the Lists tab on the search screen rather than the
+	 * standalone screen from settings.
+	 */
+	private boolean isTab(){
+		return getArguments()!=null && getArguments().getBoolean(AppKitFragment.EXTRA_IS_TAB);
+	}
+
+	/**
+	 * masto.nyc fork: "New list", as the first row.
+	 *
+	 * Upstream creates lists from a FAB, which works on the standalone screen and not here: as a
+	 * page of the search screen's pager this fragment is measured inside a nested scroller that
+	 * sizes itself from the list, so with no lists the content lays out 0x0 and the FAB is never
+	 * drawn. That is exactly when you need it. A row is measured with everything else.
+	 *
+	 * Its parentObject is null, which the handlers below have to allow for; no other row has one.
+	 */
+	private ListItem<FollowList> makeCreateItem(){
+		return new ListItem<>(getString(R.string.create_list), null, R.drawable.ic_add_24px,
+				i->onFabClick(), null);
 	}
 
 	private ListItem<FollowList> makeItem(FollowList l){
@@ -114,6 +151,8 @@ public class ManageListsFragment extends BaseSettingsFragment<FollowList> implem
 	public void onViewCreated(View view, Bundle savedInstanceState){
 		super.onViewCreated(view, savedInstanceState);
 		fab=view.findViewById(R.id.fab);
+		// masto.nyc fork: as a tab the FAB cannot lay out, and makeCreateItem covers it instead.
+		fab.setVisibility(isTab() ? View.GONE : View.VISIBLE);
 		fab.setImageResource(R.drawable.ic_add_24px);
 		fab.setContentDescription(getString(R.string.create_list));
 		fab.setOnClickListener(v->onFabClick());
@@ -157,6 +196,8 @@ public class ManageListsFragment extends BaseSettingsFragment<FollowList> implem
 		if(!ev.accountID.equals(accountID))
 			return;
 		for(ListItem<FollowList> item:data){
+			if(item.parentObject==null)  // the "New list" row, see makeCreateItem
+				continue;
 			if(item.parentObject.id.equals(ev.list.id)){
 				item.parentObject=ev.list;
 				item.title=ev.list.title;
@@ -172,7 +213,7 @@ public class ManageListsFragment extends BaseSettingsFragment<FollowList> implem
 			return;
 		int i=0;
 		for(ListItem<FollowList> item:data){
-			if(item.parentObject.id.equals(ev.listID)){
+			if(item.parentObject!=null && item.parentObject.id.equals(ev.listID)){
 				data.remove(i);
 				itemsAdapter.notifyItemRemoved(i);
 				break;
@@ -187,7 +228,8 @@ public class ManageListsFragment extends BaseSettingsFragment<FollowList> implem
 			return;
 		ListItem<FollowList> item=makeItem(ev.list);
 		data.add(item);
-		((List<ListItem<FollowList>>)data).sort(Comparator.comparing(l->l.parentObject.title));
+		// The "New list" row has no parentObject and sorts to the top, where it belongs.
+		((List<ListItem<FollowList>>)data).sort(Comparator.comparing(l->l.parentObject==null ? "" : l.parentObject.title));
 		itemsAdapter.notifyItemInserted(data.indexOf(item));
 	}
 
