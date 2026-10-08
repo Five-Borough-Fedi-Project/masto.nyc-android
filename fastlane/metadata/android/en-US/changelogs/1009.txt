@@ -1,0 +1,4 @@
+- Fixed a crash when scrolling through the hashtags you follow.
+- Those hashtags now appear straight away instead of after a wait.
+- The welcome screen no longer shows the edges of its artwork when you drag it around.
+- New tab icons. Neighbors is a block of buildings; Home is the one you live in.
