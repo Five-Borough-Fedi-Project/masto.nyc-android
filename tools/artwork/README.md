@@ -53,7 +53,14 @@ curl -s "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutline
 python3 tools/artwork/svg2vd.py /tmp/apartment.svg
 ```
 
-It only handles straight-line commands, and says so rather than guessing if an icon needs curves.
+`--drawable` writes a whole vector drawable instead, keeping Google's path data exactly as
+written and moving it onto Android's viewport with a translated group. Use that for anything
+curved: every park and tree icon Material has is curved, and the flattening path refuses them.
+The flattened form exists because `rasterize.py` can draw it, which is how the building icons
+here were checked; a curved icon has to be rendered through Android instead.
+
+Flattening only handles straight-line commands, and says so rather than guessing if an icon needs
+curves.
 To check it, run it over an icon already committed here and compare: converting `location_city`
 reproduces `ic_location_city_24px.xml`'s path data exactly, which is how this script was verified
 before it was used for `apartment`.

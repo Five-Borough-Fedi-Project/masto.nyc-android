@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- masto.nyc fork: the local timeline tab. A New Yorker already lives in a building, so the
-     greater community is buildings of buildings, against Home's single apartment block. Material
-     publishes no distinct filled variant for location_city, so the selected state reads through
-     @color/tab_bar_icon and the tab background, as the labels do. -->
+<!-- masto.nyc fork: the local timeline tab. A park rather than a building: a New Yorker already
+     lives in a building, so Home is the block you live in and this is the skyline with the trees
+     in front of it. The drawing is ours; see tools/artwork/neighbors_icon.py. It has no separate filled
+     variant, so the selected state reads through @color/tab_bar_icon and the tab background, as
+     the labels do. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:drawable="@drawable/ic_city_of_cities_24px"/>
+	<item android:drawable="@drawable/ic_neighbors_park_24px"/>
 </selector>
