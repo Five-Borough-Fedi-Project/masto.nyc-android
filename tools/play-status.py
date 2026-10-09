@@ -6,9 +6,14 @@ changes. Needs the service account JSON in GOOGLE_SERVICE_ACCOUNT_KEY.
 
   python3 tools/play-status.py [package_name]
   python3 tools/play-status.py --expect internal:1004:completed --expect production:1004:completed
+  python3 tools/play-status.py --expect-notes production:1004:"The first big update"
 
 --expect takes track:versionCode:status and exits non-zero unless Play agrees, so a release can
 check what actually landed rather than trusting a tool's exit code.
+
+--expect-notes takes track:versionCode:substring and checks the release notes as well. Promoting
+a release does not carry its notes, and fastlane reports success either way, so a production
+release once went out showing a commit subject while every other assertion passed.
 """
 import json
 import os
@@ -44,12 +49,38 @@ def check(tracks, expectations):
     return unmet
 
 
+def check_notes(tracks, expectations):
+    """Same, for the release notes. The substring may contain colons; only split twice."""
+    seen = {}
+    for track in tracks:
+        for rel in track.get("releases", []):
+            text = " ".join(n.get("text", "") for n in rel.get("releaseNotes", []))
+            for code in rel.get("versionCodes", []):
+                seen[(track["track"], str(code))] = text
+    unmet = []
+    for want in expectations:
+        track, code, substring = want.split(":", 2)
+        actual = seen.get((track, code))
+        if actual is None:
+            unmet.append(f"{track}: versionCode {code} is absent, so it has no notes to check")
+        elif substring not in actual:
+            first = actual.strip().splitlines()[:1]
+            unmet.append(f"{track}: versionCode {code} notes do not contain {substring!r}; "
+                         f"they start {first[0] if first else '(empty)'!r}")
+    return unmet
+
+
 def main():
     args = [a for a in sys.argv[1:]]
     expectations = []
     while "--expect" in args:
         i = args.index("--expect")
         expectations.append(args[i + 1])
+        del args[i:i + 2]
+    note_expectations = []
+    while "--expect-notes" in args:
+        i = args.index("--expect-notes")
+        note_expectations.append(args[i + 1])
         del args[i:i + 2]
     package = args[0] if args else "nyc.masto.android"
     key = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_KEY"])
@@ -85,14 +116,15 @@ def main():
                 for note in rel.get("releaseNotes", []):
                     first = note.get("text", "").strip().splitlines()[:1]
                     print(f"    notes[{note.get('language')}]: {first[0] if first else ''}")
-        unmet = check(tracks, expectations)
+        unmet = check(tracks, expectations) + check_notes(tracks, note_expectations)
         if unmet:
             print("\nPlay does not match what was expected:")
             for line in unmet:
                 print(f"  {line}")
             return 1
-        if expectations:
-            print(f"\nAll {len(expectations)} expectation(s) met.")
+        total = len(expectations) + len(note_expectations)
+        if total:
+            print(f"\nAll {total} expectation(s) met.")
     finally:
         call(token, "DELETE", f"{API}/{package}/edits/{edit_id}", ok_empty=True)
     return 0

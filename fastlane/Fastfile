@@ -79,23 +79,34 @@ platform :android do
   desc "Promote a build already on Play to a release status"
   lane :promote do
     track = ENV["PLAY_TRACK"] || "production"
-    upload_to_play_store(
+    promote_to = ENV["PLAY_PROMOTE_TO"]
+    options = {
       track: track,
       version_code: Integer(ENV.fetch("PLAY_VERSION_CODE")),
-      # Changing the status of a release already on a track is a promotion, even when the
-      # destination track is the one it is already on. release_status only applies when a binary
-      # is being uploaded: passing it here reported success and changed nothing, leaving 1004 a
-      # draft on production while fastlane said the upload finished.
-      track_promote_to: ENV["PLAY_PROMOTE_TO"] || track,
       track_promote_release_status: ENV["PLAY_RELEASE_STATUS"] || "completed",
       validate_only: ENV["PLAY_VALIDATE_ONLY"] == "true",
       skip_upload_aab: true,
       skip_upload_apk: true,
       skip_upload_metadata: true,
-      skip_upload_changelogs: true,
+      # A promotion does not carry release notes. Google's promote call moves a release between
+      # tracks and nothing else, so asking supply to upload changelogs alongside it does nothing
+      # at all -- it reported success and left production showing a commit subject. Notes have to
+      # be written by updating the release in place, which is what omitting track_promote_to
+      # below does.
+      skip_upload_changelogs: ENV["PLAY_UPLOAD_NOTES"] != "true",
       skip_upload_images: true,
       skip_upload_screenshots: true
-    )
+    }
+    # With no destination track this updates the release already on `track` rather than moving
+    # one, which is the only way to change what a live release says.
+    if promote_to && !promote_to.empty? && promote_to != "none"
+      # Changing the status of a release already on a track is a promotion, even when the
+      # destination track is the one it is already on. release_status only applies when a binary
+      # is being uploaded: passing it here reported success and changed nothing, leaving 1004 a
+      # draft on production while fastlane said the upload finished.
+      options[:track_promote_to] = promote_to
+    end
+    upload_to_play_store(**options)
   end
 
   lane :beta do
