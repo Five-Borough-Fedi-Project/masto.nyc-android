@@ -17,7 +17,7 @@ on:
         description: "Track the build is on now"
         default: production
       to_track:
-        description: "Track to promote it to"
+        description: "Track to promote it to. Use 'none' to leave it where it is and only rewrite its notes."
         default: production
       status:
         description: "Release status to promote to"
@@ -148,6 +148,24 @@ jobs:
           CODE: ${{ inputs.version_code }}
           WANT: ${{ inputs.status }}
           TRACK: ${{ inputs.to_track }}
+          UPDATE_NOTES: ${{ inputs.update_notes }}
+          FROM: ${{ inputs.from_track }}
         run: |
+          set -euo pipefail
           pip install --quiet google-auth
-          python3 tools/play-status.py --expect "$TRACK:$CODE:$WANT"
+          # "none" means the release was updated where it already was, so that is the track to
+          # look at.
+          CHECK_TRACK="$TRACK"
+          if [ -z "$CHECK_TRACK" ] || [ "$CHECK_TRACK" = "none" ]; then
+            CHECK_TRACK="$FROM"
+          fi
+          ARGS=(--expect "$CHECK_TRACK:$CODE:$WANT")
+          # Asserting the status alone is not enough. A promotion does not carry release notes and
+          # fastlane reports success either way, so production once went live showing a commit
+          # subject while every other check passed. Hold the notes to what was asked for.
+          if [ "$UPDATE_NOTES" = "true" ]; then
+            FILE="fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+            FIRST=$(grep -m1 -v '^[[:space:]]*$' "$FILE")
+            ARGS+=(--expect-notes "$CHECK_TRACK:$CODE:$FIRST")
+          fi
+          python3 tools/play-status.py "${ARGS[@]}"
