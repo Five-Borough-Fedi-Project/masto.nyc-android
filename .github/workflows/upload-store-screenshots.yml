@@ -1,0 +1,77 @@
+name: Upload store screenshots
+
+# Pushes fastlane/metadata/android/en-US/images/phoneScreenshots/ to the Play listing.
+#
+# Nothing else does. Every release lane passes skip_upload_screenshots, so the listing's images
+# only ever change when someone runs this on purpose.
+#
+# supply replaces the whole set with what is in that folder, so a file left out is a file removed
+# from the listing. The step below prints what it is about to publish for that reason.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Validate against Play without changing the listing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3.0
+          bundler-cache: true
+
+      - name: Remove translations from fastlane metadata
+        run: |
+          mv fastlane/metadata/android fastlane/metadata/android_orig
+          mkdir fastlane/metadata/android
+          mv fastlane/metadata/android_orig/en-US fastlane/metadata/android/
+
+      # The whole set is replaced by what is here, so say what that is before doing it.
+      # The whole set is replaced by what is here, so say what that is before doing it.
+      - name: Say what will be published
+        run: |
+          set -euo pipefail
+          python3 - <<'CHECK'
+          import glob, struct, sys
+          files = sorted(glob.glob("fastlane/metadata/android/en-US/images/phoneScreenshots/*"))
+          if not files:
+              sys.exit("::error::No screenshots found, which would empty the listing.")
+          print("The listing will show exactly these, in this order:")
+          bad = []
+          for path in files:
+              data = open(path, "rb").read()
+              w, h = struct.unpack(">II", data[16:24])
+              print(f"  {path.rsplit('/', 1)[1]}: {w}x{h}, {len(data) / 1e6:.1f}MB")
+              if len(data) > 8 * 1024 * 1024:
+                  bad.append(f"{path} is over Play's 8MB limit")
+              if not (320 <= w <= 3840 and 320 <= h <= 3840):
+                  bad.append(f"{path} is outside Play's 320-3840px range")
+          for problem in bad:
+              print(f"::error::{problem}")
+          sys.exit(1 if bad else 0)
+          CHECK
+
+      - name: Validate against Google Play
+        run: bundle exec fastlane screenshots
+        env:
+          PLAY_VALIDATE_ONLY: true
+          PLAY_TRACK: production
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Upload to Google Play
+        if: ${{ !inputs.dry_run }}
+        run: bundle exec fastlane screenshots
+        env:
+          PLAY_TRACK: production
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}

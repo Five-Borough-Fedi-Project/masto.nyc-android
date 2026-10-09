@@ -77,6 +77,25 @@ platform :android do
   # it. A versionCode can only be uploaded once, so a draft that needs to go live has to be
   # promoted rather than released again. Driven by .github/workflows/promote-play-release.yml.
   desc "Promote a build already on Play to a release status"
+  # The store's screenshots, and nothing else. Every other lane skips images entirely, so this
+  # is the only way they change; a release never touches them by accident.
+  #
+  # supply replaces the whole set with whatever is in phoneScreenshots/, so the files that are
+  # not being changed have to stay there. Deleting one here deletes it from the listing.
+  lane :screenshots do
+    upload_to_play_store(
+      track: ENV["PLAY_TRACK"] || "production",
+      validate_only: ENV["PLAY_VALIDATE_ONLY"] == "true",
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      # Images are the icon and the feature graphic. Those are not what this lane is for.
+      skip_upload_images: true,
+      skip_upload_screenshots: false
+    )
+  end
+
   lane :promote do
     track = ENV["PLAY_TRACK"] || "production"
     promote_to = ENV["PLAY_PROMOTE_TO"]
