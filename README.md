@@ -1,5 +1,10 @@
 # Masto NYC for Android
 
+[![CI](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/ci.yml/badge.svg)](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/ci.yml)
+[![Sync upstream](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/sync-upstream.yml/badge.svg)](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/sync-upstream.yml)
+[![Deploy main to internal testing](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/deploy-main.yml/badge.svg)](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/deploy-main.yml)
+[![Latest release](https://img.shields.io/github/v/release/Five-Borough-Fedi-Project/masto.nyc-android)](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/releases)
+
 A fork of the [official Mastodon Android app](https://github.com/mastodon/mastodon-android), rebranded for [masto.nyc](https://masto.nyc) and locked to that server. It isn't affiliated with or endorsed by the Mastodon non-profit.
 
 Having to pick a server before you can sign up puts a lot of people off, so this app skips that step. There's no server picker, and signup and login both go straight to masto.nyc. You still get the whole fediverse once you're in.
