@@ -1,5 +1,7 @@
 # Masto NYC for Android
 
+[<img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="50">](https://play.google.com/store/apps/details?id=nyc.masto.android)
+
 [![CI](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/ci.yml/badge.svg)](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/ci.yml)
 [![Sync upstream](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/sync-upstream.yml/badge.svg)](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/sync-upstream.yml)
 [![Deploy main to internal testing](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/deploy-main.yml/badge.svg)](https://github.com/Five-Borough-Fedi-Project/masto.nyc-android/actions/workflows/deploy-main.yml)
